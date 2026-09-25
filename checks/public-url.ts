@@ -24,6 +24,19 @@ async function main() {
     .passthrough().parse(await json(`${web}/config.json`))
   assert.equal(config.programId, deployment.programId)
   z.object({ ok: z.literal(true), cluster: z.literal("devnet") }).passthrough().parse(await json(`${api}/health`))
+  const preflight = await fetch(`${api}/rpc`, { method: "OPTIONS", headers: {
+    origin: web, "access-control-request-method": "POST",
+    "access-control-request-headers": "content-type,solana-client",
+  }, signal: AbortSignal.timeout(15_000) })
+  assert.equal(preflight.status, 204, `browser RPC preflight: HTTP ${preflight.status}`)
+  assert.equal(preflight.headers.get("access-control-allow-origin"), web)
+  assert.match(preflight.headers.get("access-control-allow-headers") ?? "", /solana-client/i)
+  const rpc = await fetch(`${api}/rpc`, { method: "POST", headers: { "content-type": "application/json", origin: web },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getAccountInfo", params: [deployment.programId, { encoding: "base64" }] }),
+    signal: AbortSignal.timeout(15_000) })
+  assert.equal(rpc.status, 200, `browser RPC read: HTTP ${rpc.status}`)
+  z.object({ result: z.object({ value: z.object({ executable: z.literal(true) }) }) })
+    .passthrough().parse(await rpc.json())
   const venue = z.object({ cluster: z.literal("devnet"), program: z.string(),
     indexer: z.object({ stale: z.literal(false) }).passthrough() }).passthrough().parse(await json(`${api}/venue`))
   assert.equal(venue.program, deployment.programId)
