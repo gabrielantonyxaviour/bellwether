@@ -11,16 +11,18 @@ import { errorText, type Chain } from "../../scripts/assets/tx.js"
 import { chainNow, fetchRaw, type CredentialBackend, type GateKind } from "./backend.js"
 import { LABEL } from "./labels.js"
 import type { LogEntry, ScreeningLog } from "./screening-log.js"
+import type { Funder, FundingResult } from "./funding.js"
 import type { ListInfo, Screening } from "./screening.js"
 
 export type ErrorCode =
   | "INVALID_INPUT" | "SANCTIONED" | "REVOKED" | "SCREENING_UNAVAILABLE" | "NOT_ADMITTED" | "CHAIN_ERROR"
   | "UNAUTHORIZED" | "OPERATOR_TOKEN_UNSET" | "NOT_FOUND" | "INTERNAL"
+  | "INVALID_PROOF" | "RATE_LIMITED" | "DAILY_CAP" | "FUNDING_UNAVAILABLE"
 
 export class AdmissionError extends Error {
   /** Internal reason for logs and operators; never serialized into an HTTP response. */
   detail?: string
-  constructor(readonly code: ErrorCode, readonly status: 400 | 401 | 403 | 404 | 500 | 502 | 503, message: string, detail?: string) {
+  constructor(readonly code: ErrorCode, readonly status: 400 | 401 | 403 | 404 | 429 | 500 | 502 | 503, message: string, detail?: string) {
     super(message)
     this.detail = detail
   }
@@ -40,6 +42,7 @@ export interface AdmitResult {
   credential: CredentialRef
   stockAccount: StockAccount
   signature: string | null
+  funding: FundingResult | null
 }
 
 export interface RevokeResult { label: typeof LABEL; wallet: Address; status: "revoked"; signature: string }
@@ -89,12 +92,15 @@ export interface AdmissionDeps {
   screening: Screening
   log: ScreeningLog
   ttlSeconds: bigint
+  dailyCap: number | null
+  funder?: Funder
 }
 
 const iso = (unix: bigint) => new Date(Number(unix) * 1000).toISOString()
 
 export function createAdmissions(d: AdmissionDeps): Admissions {
   const locks = new Map<string, Promise<unknown>>()
+  let admissionTail: Promise<unknown> = Promise.resolve()
   /** One operation per wallet at a time (two admits would race for the same attestation PDA). */
   function serial<T>(wallet: string, fn: () => Promise<T>): Promise<T> {
     const run = (locks.get(wallet) ?? Promise.resolve()).then(fn, fn)
@@ -142,7 +148,8 @@ export function createAdmissions(d: AdmissionDeps): Admissions {
       await ready()
     },
 
-    admit: (wallet, opts = {}) => serial(wallet, async () => {
+    admit: (wallet, opts = {}) => {
+      const result = admissionTail.then(() => serial(wallet, async () => {
       if (!opts.operator && d.log.lastCredentialEvent(wallet)?.event === "revoked") {
         throw new AdmissionError("REVOKED", 403, "This wallet's test admission was revoked by the venue operator. Only the operator can re-admit it.")
       }
@@ -175,13 +182,24 @@ export function createAdmissions(d: AdmissionDeps): Admissions {
         const thaw = await admitInstructions({ payer: d.payer, owner: wallet, mint: d.stockMint, freezeAuthority: d.freezeAuthority })
         instructions.push(...thaw.instructions)
       }
+      if (instructions.length > 0 && d.dailyCap !== null) {
+        const today = new Date().toISOString().slice(0, 10)
+        const issuedToday = d.log.recent(Number.MAX_SAFE_INTEGER).filter((entry) =>
+          entry.event === "admitted" && entry.at.slice(0, 10) === today && typeof entry.signature === "string",
+        ).length
+        if (issuedToday >= d.dailyCap) throw new AdmissionError("DAILY_CAP", 429, "The daily test-admission limit has been reached.")
+      }
       const signature = instructions.length > 0 ? await send(wallet, "admission", instructions) : null
+      const funding = d.funder ? await d.funder.fund(wallet) : null
       d.log.append({ wallet, event: "admitted", credential: existing.address, expiresAt: iso(expiresAt), alreadyAdmitted: valid, byOperator: opts.operator === true, signature })
       return {
         label: LABEL, wallet, status: "admitted", alreadyAdmitted: valid, expiresAt: iso(expiresAt), expiresAtUnix: Number(expiresAt),
-        credential: { kind: existing.kind, address: existing.address }, stockAccount: { address: stock.address, state: "thawed" }, signature,
-      }
-    }),
+        credential: { kind: existing.kind, address: existing.address }, stockAccount: { address: stock.address, state: "thawed" }, signature, funding,
+      } satisfies AdmitResult
+      }))
+      admissionTail = result.catch(() => {})
+      return result
+    },
 
     revoke: (wallet) => serial(wallet, async () => {
       const [cred, stock] = await Promise.all([d.backend.read(wallet), stockAccount(wallet)])

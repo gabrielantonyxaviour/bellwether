@@ -4,7 +4,7 @@
  *   npx tsx --test services/api/*.test.ts
  */
 import assert from "node:assert/strict"
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { test } from "node:test"
@@ -13,7 +13,7 @@ import { toPrint } from "../indexer/print.js"
 import { SqlTapeStore } from "../indexer/sql-store.js"
 import { STATUS_KEY, utcDayBounds } from "../indexer/store.js"
 import { POOL, PROGRAM, sampleEvent } from "../indexer/test-fixtures.js"
-import { createApp } from "./app.js"
+import { createApp, type ApiDeps } from "./app.js"
 import { fileHaltSource } from "./halts-file.js"
 
 const DAY = utcDayBounds("2026-09-25")!
@@ -21,7 +21,7 @@ const NOW_MS = (DAY.start + 12 * 3600) * 1000
 const dir = mkdtempSync(join(tmpdir(), "bellwether-api-test-"))
 process.on("exit", () => rmSync(dir, { recursive: true, force: true }))
 
-async function appWith(haltPath = join(dir, "missing.json")) {
+async function appWith(haltPath = join(dir, "missing.json"), marketFetch?: typeof fetch, extra: Partial<ApiDeps> = {}) {
   const store = await SqlTapeStore.open(openNodeSqlite(":memory:"))
   const at = (signature: string, time: number, direction: 0 | 1, stock: bigint, usdc: bigint) =>
     store.insertPrint(toPrint(sampleEvent({ time, direction, stockAmount: stock, shareUnits: stock, usdcAmount: usdc, priceUnits: (usdc * 1_000_000n) / stock }), { signature, eventIndex: 0, slot: time, indexedAt: time * 1000 + 800 }))
@@ -30,8 +30,48 @@ async function appWith(haltPath = join(dir, "missing.json")) {
   await store.upsertPool({ pool: POOL, program: PROGRAM, ticker: "BWRS", stockMint: sampleEvent().stockMint, usdcMint: sampleEvent().usdcMint, stockDecimals: 6, usdcDecimals: 6, symbolRecord: null, feeBps: 30, halted: false, active: true, updatedAt: 0 })
   await store.insertSnapshot({ pool: POOL, time: DAY.start + 7200, slot: DAY.start + 7200, ord: 0, reserveStock: 9_970_000_000n, reserveUsdc: 250_751_000_000n, source: "print" })
   await store.setMeta(STATUS_KEY, JSON.stringify({ program: PROGRAM, ws: "subscribed", lastSlot: 9, lastBackfillAt: NOW_MS, lastPoolRefreshAt: null, printsIndexed: 2, lastError: null, updatedAt: NOW_MS - 1000 }))
-  return createApp({ store, halts: fileHaltSource(haltPath), venue: { programId: PROGRAM, cluster: "fork", retentionDays: 35 }, now: () => NOW_MS })
+  return createApp({ store, halts: fileHaltSource(haltPath), venue: { programId: PROGRAM, cluster: "fork", retentionDays: 35 }, now: () => NOW_MS, marketFetch, ...extra })
 }
+
+test("FWDI report refresh requires an operator token and enforces the ten-minute limit", async () => {
+  const report = JSON.parse(readFileSync("services/rehearsal/latest-report.json", "utf8"))
+  let refreshes = 0
+  const app = await appWith(undefined, undefined, {
+    operatorToken: "long-operator-token",
+    rehearsalReport: async (refresh) => { if (refresh) refreshes++; return report },
+  })
+  assert.equal((await app.request("/rehearsal/fwdi")).status, 200)
+  const denied = await app.request("/rehearsal/fwdi?refresh=1")
+  assert.deepEqual(await json(denied), { error: "operator token required", code: "unauthorized" })
+  const auth = { authorization: "Bearer long-operator-token" }
+  assert.equal((await app.request("/rehearsal/fwdi?refresh=1", { headers: auth })).status, 200)
+  const repeated = await app.request("/rehearsal/fwdi?refresh=1", { headers: auth })
+  assert.equal(repeated.status, 429)
+  assert.equal(refreshes, 1)
+  assert.equal((await app.request("/notice/draft")).status, 503)
+})
+
+test("GET /market/FWDI validates the Yahoo chart, caches it, and reports outages", async () => {
+  const fixture = JSON.parse(readFileSync("services/caps/fixtures/fwdi-2026-08.json", "utf8"))
+  let calls = 0
+  const marketFetch: typeof fetch = async () => { calls++; return Response.json(fixture.responses.yahoo.body) }
+  const app = await appWith(join(dir, "missing.json"), marketFetch)
+  const first = await app.request("/market/FWDI?range=6mo&interval=1d")
+  assert.equal(first.status, 200)
+  assert.equal(first.headers.get("cache-control"), "public, max-age=300")
+  const result = await json(first)
+  assert.equal(result.chart.result[0].meta.symbol, "FWDI")
+  assert.ok(result.chart.result[0].timestamp.length > 0)
+  assert.equal((await app.request("/market/FWDI?range=6mo")).status, 200)
+  assert.equal(calls, 1, "the second read uses the five-minute cache")
+  assert.equal((await app.request("/market/FWDI?range=all")).status, 400)
+  assert.equal((await app.request("/market/OTHER")).status, 404)
+
+  const failed = await appWith(join(dir, "missing.json"), async () => new Response("upstream failure", { status: 503 }))
+  const unavailable = await failed.request("/market/FWDI")
+  assert.equal(unavailable.status, 503)
+  assert.deepEqual(await json(unavailable), { error: "underlying stock market data is unavailable", code: "market_unavailable" })
+})
 
 const json = async (res: Response): Promise<any> => res.json()
 
@@ -39,7 +79,7 @@ test("GET /tape: every transparency field, rolling 24 h volume and end-of-day po
   const app = await appWith()
   const res = await app.request("/tape?date=2026-09-25")
   assert.equal(res.status, 200)
-  assert.equal(res.headers.get("access-control-allow-origin"), "*")
+  assert.equal(res.headers.get("access-control-allow-origin"), null, "no origin means no CORS header")
   const body = await json(res)
   assert.equal(body.count, 2)
   const [buy, sell] = body.prints
@@ -96,9 +136,14 @@ test("GET /symbols and /venue describe the pool, contract address and indexer he
   assert.equal(venue.pools[0].contract_address, PROGRAM)
   assert.equal(venue.indexer.ws, "subscribed")
   assert.equal(venue.indexer.stale, false)
+  assert.equal(venue.indexer.last_error, null)
   assert.match(venue.usd_method, /USDC/)
-  const preflight = await app.request("/tape", { method: "OPTIONS", headers: { origin: "https://example.org", "access-control-request-method": "GET" } })
-  assert.equal(preflight.headers.get("access-control-allow-origin"), "*")
+  const preflight = await app.request("/tape", { method: "OPTIONS", headers: { origin: "https://bellwether.larinova.com", "access-control-request-method": "GET" } })
+  assert.equal(preflight.headers.get("access-control-allow-origin"), "https://bellwether.larinova.com")
+  const local = await app.request("/tape", { headers: { origin: "http://localhost:5173" } })
+  assert.equal(local.headers.get("access-control-allow-origin"), "http://localhost:5173")
+  const denied = await app.request("/tape", { headers: { origin: "https://example.org" } })
+  assert.equal(denied.headers.get("access-control-allow-origin"), null)
 })
 
 test("GET /halts: missing ledger is empty, the relay's state file is normalized, a corrupt one is a 503", async () => {
@@ -116,7 +161,8 @@ test("GET /halts: missing ledger is empty, the relay's state file is normalized,
     ],
   }))
   const body = await json(await (await appWith(ledger)).request("/halts?symbol=fwdi"))
-  assert.equal(body.source, ledger)
+  assert.equal(body.source, "Nasdaq Trader halt feed")
+  assert.ok(!JSON.stringify(body).includes(dir), "public halt response contains no local file path")
   assert.equal(body.skipped, 1)
   assert.deepEqual(body.relay, { last_poll_at: "2026-09-25T14:15:00.000Z", last_poll_ok: true, consecutive_failures: 0, last_heartbeat_at: "2026-09-25T14:14:40.000Z", feed_published_at: null, source: "nasdaq" })
   assert.deepEqual(body.halts, [{

@@ -1,5 +1,5 @@
 /**
- * The public venue API: free, JSON, CORS-open, read-only. Query parameters are zod-validated and
+ * The public venue API: free, JSON, read-only. Query parameters are zod-validated and
  * every error is { error, code? } with no internals. Runtime-neutral (Hono): Node serves it via
  * main.ts; a Worker can serve the same app over a Durable Object-backed TapeStore.
  *
@@ -9,11 +9,15 @@
  *   GET /halts?symbol=                                    the halt relay's ledger
  */
 import { Hono, type Context } from "hono"
+import { createHash, timingSafeEqual } from "node:crypto"
 import { cors } from "hono/cors"
 import { z } from "zod"
 import { USD_METHOD } from "../indexer/print.js"
 import { DAY_S, STATUS_KEY, utcDate, utcDayBounds, type IndexerStatus, type PoolInfo, type TapeStore } from "../indexer/store.js"
 import { HaltLedgerUnreadable, type HaltSource } from "./halts.js"
+import { createMarketReader } from "./market.js"
+import { NoticeDraftSchema } from "../notice/schema.js"
+import { RehearsalReportSchema } from "../rehearsal/schema.js"
 import { eodView, pairView, printView } from "./present.js"
 
 export interface ApiDeps {
@@ -22,6 +26,10 @@ export interface ApiDeps {
   venue: { programId: string; cluster: string; retentionDays: number }
   /** Unix milliseconds; injectable for tests. */
   now?: () => number
+  marketFetch?: typeof fetch
+  noticeDraft?: () => Promise<unknown>
+  rehearsalReport?: (refresh: boolean) => Promise<unknown>
+  operatorToken?: string | null
 }
 
 const DateParam = z
@@ -35,12 +43,14 @@ const SymbolParam = z
   .transform((s) => s.toUpperCase())
 const TapeQuery = z.object({ date: DateParam.optional(), symbol: SymbolParam.optional(), side: z.enum(["buy", "sell"]).optional() })
 const HaltsQuery = z.object({ symbol: SymbolParam.optional() })
+const MarketQuery = z.object({ range: z.enum(["1mo", "3mo", "6mo", "1y"]).default("6mo"), interval: z.literal("1d").default("1d") }).strict()
+const RehearsalQuery = z.object({ refresh: z.literal("1").optional() }).strict()
 
 /** A watcher that has not written status for this long is reported stale. */
 const STALE_MS = 5 * 60_000
 
 class ApiError extends Error {
-  constructor(readonly status: 400 | 404 | 503, message: string, readonly code: string) {
+  constructor(readonly status: 400 | 401 | 404 | 429 | 503, message: string, readonly code: string) {
     super(message)
   }
 }
@@ -57,12 +67,19 @@ function parseQuery<T extends z.ZodTypeAny>(schema: T, c: Context): z.infer<T> {
 export function createApp(deps: ApiDeps): Hono {
   const nowMs = deps.now ?? Date.now
   const nowS = () => Math.floor(nowMs() / 1000)
+  const market = createMarketReader(deps.marketFetch, nowMs)
+  let noticeCache: { until: number; body: z.infer<typeof NoticeDraftSchema> } | null = null
+  let rehearsalCache: { until: number; body: z.infer<typeof RehearsalReportSchema> } | null = null
+  let lastRefresh = 0
   const app = new Hono()
 
-  app.use("*", cors({ origin: "*", allowMethods: ["GET", "OPTIONS"], maxAge: 86_400 }))
+  app.use("*", cors({
+    origin: (origin) => origin === "https://bellwether.larinova.com" || /^http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?$/.test(origin) ? origin : "",
+    allowMethods: ["GET", "OPTIONS"], maxAge: 86_400,
+  }))
   app.use("*", async (c, next) => {
     await next()
-    if (c.res.status === 200) c.header("cache-control", "public, max-age=5")
+    if (c.res.status === 200 && !c.res.headers.has("cache-control")) c.header("cache-control", "public, max-age=5")
   })
 
   async function pairFor(pool: PoolInfo, date: string) {
@@ -87,6 +104,9 @@ export function createApp(deps: ApiDeps): Hono {
         "/symbols": "pairs with last price, rolling 24-hour share volume and pool size",
         "/venue": "program (contract) address, pools, USD method, retention and indexer health",
         "/halts": "halt ledger mirrored from the primary listing exchange: ?symbol=",
+        "/market/FWDI": "underlying stock daily Yahoo Finance chart: ?range=1mo|3mo|6mo|1y&interval=1d",
+        "/notice/draft": "public notice with chain-read facts and operator-input flags",
+        "/rehearsal/fwdi": "latest FWDI mainnet rehearsal report; operator refresh with ?refresh=1",
       },
     }))
 
@@ -139,7 +159,7 @@ export function createApp(deps: ApiDeps): Hono {
         last_backfill_at: status.lastBackfillAt ? new Date(status.lastBackfillAt).toISOString() : null,
         last_pool_refresh_at: status.lastPoolRefreshAt ? new Date(status.lastPoolRefreshAt).toISOString() : null,
         prints_indexed_since_start: status.printsIndexed,
-        last_error: status.lastError,
+        last_error: status.lastError ? "Indexer reported an error" : null,
         updated_at: new Date(status.updatedAt).toISOString(),
         stale: nowMs() - status.updatedAt > STALE_MS,
       },
@@ -151,6 +171,48 @@ export function createApp(deps: ApiDeps): Hono {
     const list = await deps.halts.list()
     const entries = q.symbol ? list.entries.filter((e) => e.symbol === q.symbol) : list.entries
     return c.json({ generated_at: new Date(nowMs()).toISOString(), source: list.source, skipped: list.skipped, relay: list.relay, halts: entries })
+  })
+
+  app.get("/market/:symbol", async (c) => {
+    if (c.req.param("symbol").toUpperCase() !== "FWDI") throw new ApiError(404, "market symbol not found", "not_found")
+    const { range } = parseQuery(MarketQuery, c)
+    try {
+      const body = await market(range)
+      c.header("cache-control", "public, max-age=300")
+      return c.json(body)
+    } catch {
+      throw new ApiError(503, "underlying stock market data is unavailable", "market_unavailable")
+    }
+  })
+
+  app.get("/notice/draft", async (c) => {
+    if (!deps.noticeDraft) throw new ApiError(503, "notice draft is unavailable", "notice_unavailable")
+    if (noticeCache && noticeCache.until > nowMs()) { c.header("cache-control", "public, max-age=60"); return c.json(noticeCache.body) }
+    try {
+      const body = NoticeDraftSchema.parse(await deps.noticeDraft())
+      noticeCache = { body, until: nowMs() + 60_000 }
+      c.header("cache-control", "public, max-age=60")
+      return c.json(body)
+    } catch { throw new ApiError(503, "notice draft is unavailable", "notice_unavailable") }
+  })
+
+  app.get("/rehearsal/fwdi", async (c) => {
+    const { refresh } = parseQuery(RehearsalQuery, c)
+    if (!deps.rehearsalReport) throw new ApiError(503, "FWDI report is unavailable", "rehearsal_unavailable")
+    if (refresh) {
+      const token = deps.operatorToken
+      const given = (c.req.header("authorization") ?? "").replace(/^Bearer\s+/i, "")
+      const hash = (s: string) => createHash("sha256").update(s).digest()
+      if (!token || !given || !timingSafeEqual(hash(given), hash(token))) throw new ApiError(401, "operator token required", "unauthorized")
+      if (lastRefresh && nowMs() - lastRefresh < 10 * 60_000) throw new ApiError(429, "FWDI report was refreshed recently", "refresh_rate_limited")
+      lastRefresh = nowMs()
+    } else if (rehearsalCache && rehearsalCache.until > nowMs()) { c.header("cache-control", "public, max-age=60"); return c.json(rehearsalCache.body) }
+    try {
+      const body = RehearsalReportSchema.parse(await deps.rehearsalReport(refresh === "1"))
+      rehearsalCache = { body, until: nowMs() + 60_000 }
+      c.header("cache-control", refresh ? "no-store" : "public, max-age=60")
+      return c.json(body)
+    } catch { throw new ApiError(503, "FWDI report is unavailable", "rehearsal_unavailable") }
   })
 
   app.notFound((c) => c.json({ error: `no route ${c.req.method} ${c.req.path}`, code: "not_found" }, 404))

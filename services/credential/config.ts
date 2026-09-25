@@ -11,6 +11,11 @@
  *   CREDENTIAL_GATE                     sas (default) | membership
  *   BELLWETHER_VENUE_PROGRAM_ID, BELLWETHER_VENUE   required when CREDENTIAL_GATE=membership
  *   CREDENTIAL_TTL_DAYS                 attestation lifetime (default 30)
+ *   CREDENTIAL_DAILY_CAP                paid admissions per UTC day (default 10 mainnet; unlimited elsewhere)
+ *   CREDENTIAL_TEST_USDC_MINT           devnet test mint (fallback BELLWETHER_USDC_MINT/deployment)
+ *   CREDENTIAL_FUNDING_SOL_LAMPORTS     devnet new-wallet target (default 0.01 SOL, max 0.05)
+ *   CREDENTIAL_FUNDING_USDC_RAW         devnet test-USDC target (default 1 USDC, max 5)
+ *   CREDENTIAL_FUNDING_DAILY_CAP        funded wallets per UTC day (default 20)
  *   CREDENTIAL_OPERATOR_TOKEN           bearer token for /revoke and /screening-log (≥ 16 chars)
  *   CREDENTIAL_DATA_DIR                 runtime dir (default services/credential/data)
  *   CREDENTIAL_SDN_URL / _MAX_AGE_HOURS official SDN.XML source and cache age (default 24 h)
@@ -43,6 +48,8 @@ export interface CredentialConfig {
   stockMint: Address
   gate: GateConfig
   ttlSeconds: bigint
+  dailyCap: number | null
+  funding: { usdcMint: Address; solTarget: bigint; usdcTarget: bigint; dailyCap: number } | null
   operatorToken: string | null
   dataDir: string
   sdnCachePath: string
@@ -67,6 +74,12 @@ const envSchema = z.object({
   BELLWETHER_VENUE_PROGRAM_ID: base58.optional(),
   BELLWETHER_VENUE: base58.optional(),
   CREDENTIAL_TTL_DAYS: z.coerce.number().positive().max(365).default(30),
+  CREDENTIAL_DAILY_CAP: z.coerce.number().int().min(0).optional(),
+  CREDENTIAL_TEST_USDC_MINT: base58.optional(),
+  BELLWETHER_USDC_MINT: base58.optional(),
+  CREDENTIAL_FUNDING_SOL_LAMPORTS: z.coerce.bigint().min(0n).max(50_000_000n).default(10_000_000n),
+  CREDENTIAL_FUNDING_USDC_RAW: z.coerce.bigint().min(0n).max(5_000_000n).default(1_000_000n),
+  CREDENTIAL_FUNDING_DAILY_CAP: z.coerce.number().int().min(0).max(100).default(20),
   CREDENTIAL_OPERATOR_TOKEN: z.string().min(16, "CREDENTIAL_OPERATOR_TOKEN must be at least 16 characters").optional(),
   CREDENTIAL_DATA_DIR: z.string().min(1).optional(),
   CREDENTIAL_SDN_URL: z.string().url().default(OFAC_SDN_XML_URL),
@@ -102,6 +115,8 @@ export async function loadConfig(env: NodeJS.ProcessEnv = process.env): Promise<
   }
   const stockMint = e.BELLWETHER_STOCK_MINT ? address(e.BELLWETHER_STOCK_MINT) : mintFromDeployments(e.CREDENTIAL_CLUSTER)
   if (!stockMint) throw new Error(`credential config: set BELLWETHER_STOCK_MINT or create ${e.CREDENTIAL_CLUSTER}'s rehearsal mint first`)
+  const devnetUsdc = e.CREDENTIAL_TEST_USDC_MINT ?? e.BELLWETHER_USDC_MINT ?? clusterConfig("devnet", env).usdcMint
+  if (e.CREDENTIAL_CLUSTER === "devnet" && !devnetUsdc) throw new Error("credential config: devnet funding needs CREDENTIAL_TEST_USDC_MINT or BELLWETHER_USDC_MINT")
   let gate: GateConfig = { kind: "sas" }
   if (e.CREDENTIAL_GATE === "membership") {
     if (!e.BELLWETHER_VENUE_PROGRAM_ID || !e.BELLWETHER_VENUE) throw new Error("credential config: membership needs BELLWETHER_VENUE_PROGRAM_ID and BELLWETHER_VENUE")
@@ -119,6 +134,11 @@ export async function loadConfig(env: NodeJS.ProcessEnv = process.env): Promise<
     stockMint,
     gate,
     ttlSeconds: BigInt(Math.round(e.CREDENTIAL_TTL_DAYS * 86_400)),
+    dailyCap: e.CREDENTIAL_DAILY_CAP ?? (e.CREDENTIAL_CLUSTER === "mainnet" ? 10 : null),
+    funding: e.CREDENTIAL_CLUSTER === "devnet" ? {
+      usdcMint: address(devnetUsdc!), solTarget: e.CREDENTIAL_FUNDING_SOL_LAMPORTS,
+      usdcTarget: e.CREDENTIAL_FUNDING_USDC_RAW, dailyCap: e.CREDENTIAL_FUNDING_DAILY_CAP,
+    } : null,
     operatorToken: e.CREDENTIAL_OPERATOR_TOKEN ?? null,
     dataDir,
     ...runtimePaths(dataDir),

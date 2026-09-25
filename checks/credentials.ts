@@ -19,12 +19,15 @@ import { TOKEN_PROGRAM_ADDRESS, findAssociatedTokenPda } from "@solana-program/t
 import { MAINNET_USDC_MINT } from "../config/clusters.js"
 import { associatedStockAccount, mintRehearsalStock, readTokenAccount } from "../scripts/assets/thaw.js"
 import { createChain, errorText, type Chain } from "../scripts/assets/tx.js"
+import { createTestUsdc } from "../scripts/assets/test-usdc.js"
 import { DEFAULT_FIXTURE, SERVICE_DIR, runtimePaths, type CredentialConfig } from "../services/credential/config.js"
 import { startOwnFork, setTokenBalance } from "../services/credential/fork/surfnet.js"
 import { deployVenue, type ForkVenue } from "../services/credential/fork/venue-setup.js"
 import { resilientChain, withRetry } from "../services/credential/retry.js"
 import { sasIdentity } from "../services/credential/sas.js"
 import { startServer, type RunningService } from "../services/credential/service.js"
+import { createDevnetFunder } from "../services/credential/funding.js"
+import { ScreeningLog } from "../services/credential/screening-log.js"
 import { OFAC_SDN_XML_URL, loadFixture } from "../services/credential/sdn.js"
 import { BUY, GATE_MEMBER, GATE_SAS, addLiquidityIx, swapIx } from "../services/credential/venue-ix.js"
 
@@ -63,10 +66,18 @@ async function http(svc: RunningService, method: "GET" | "POST", path: string, b
 }
 
 /** POST /admit; on failure, attach the service log's recorded reason (never in the HTTP body). */
-async function admitVia(svc: RunningService, wallet: Address | string, token: string): Promise<{ status: number; json: Json }> {
-  const res = await http(svc, "POST", "/admit", { wallet })
+async function signedBody(svc: RunningService, signer: KeyPairSigner) {
+  const challenge = await http(svc, "GET", `/admit/challenge?wallet=${signer.address}`)
+  if (challenge.status !== 200) throw new Error(`challenge failed: ${JSON.stringify(challenge.json)}`)
+  const message = challenge.json.message as string
+  const signature = (await signer.signMessages([{ content: new TextEncoder().encode(message), signatures: {} }]))[0][signer.address]
+  return { wallet: signer.address, message, signature: Buffer.from(signature).toString("base64") }
+}
+
+async function admitVia(svc: RunningService, signer: KeyPairSigner, token: string): Promise<{ status: number; json: Json }> {
+  const res = await http(svc, "POST", "/admit", await signedBody(svc, signer))
   if (res.status !== 200) {
-    const log = await http(svc, "GET", `/screening-log?wallet=${wallet}&limit=5`, undefined, token)
+    const log = await http(svc, "GET", `/screening-log?wallet=${signer.address}&limit=5`, undefined, token)
     res.json.serviceLog = (log.json.entries ?? []).find((e: Json) => e.event === "error")?.reason
   }
   return res
@@ -103,7 +114,7 @@ async function main() {
     const token = randomBytes(24).toString("hex")
     const config: CredentialConfig = {
       cluster: "fork", rpcUrl: fork.rpcUrl, issuer, freezeAuthority: venueKey, payer: issuer, stockMint: venue.keys.stockMint,
-      gate: { kind: "sas" }, ttlSeconds: 30n * 86_400n, operatorToken: token, dataDir: tmp,
+      gate: { kind: "sas" }, ttlSeconds: 30n * 86_400n, dailyCap: null, funding: null, operatorToken: token, dataDir: tmp,
       sdnCachePath: runtimePaths(join(SERVICE_DIR, "data")).sdnCachePath, logPath: join(tmp, "screening-log.jsonl"),
       sdnUrl: OFAC_SDN_XML_URL, sdnMaxAgeMs: 24 * 3_600_000, fixturePath: DEFAULT_FIXTURE, host: "127.0.0.1", port: 0, corsOrigin: "*",
     }
@@ -118,7 +129,7 @@ async function main() {
 
     // LP: admitted through the service, then seeds 1,000 BWRS against 20,000 USDC.
     const lp = await fundedTrader(chain, fork.rpcUrl, 20_000n * ONE, venue.keys.stockMint)
-    const lpAdmit = await admitVia(svc, lp.kp.address, token)
+    const lpAdmit = await admitVia(svc, lp.kp, token)
     if (lpAdmit.status !== 200) throw new Error(`LP admission failed: ${JSON.stringify(lpAdmit.json).slice(0, 1_500)}`)
     expect(true, "LP admitted through the service")
     await mintRehearsalStock(chain, { payer: issuer, mint: venue.keys.stockMint, to: lp.stock, mintAuthority: venue.mintAuthority, shares: 1_000n })
@@ -128,15 +139,22 @@ async function main() {
     const trader = await fundedTrader(chain, fork.rpcUrl, 500n * ONE, venue.keys.stockMint)
     const bad = await http(svc, "POST", "/admit", { wallet: "not-a-wallet" })
     expect(bad.status === 400 && bad.json.code === "INVALID_INPUT" && typeof bad.json.error === "string", "malformed wallet → 400 {error, code: INVALID_INPUT}", bad)
-    const admit = await admitVia(svc, trader.kp.address, token)
+    const proof = await signedBody(svc, trader.kp)
+    const missing = await http(svc, "POST", "/admit", { wallet: trader.kp.address })
+    expect(missing.status === 401 && missing.json.code === "INVALID_PROOF", "missing signature → 401 INVALID_PROOF", missing)
+    const invalid = await http(svc, "POST", "/admit", { ...proof, signature: "bad" })
+    expect(invalid.status === 401 && invalid.json.code === "INVALID_PROOF", "invalid signature → 401 INVALID_PROOF", invalid)
+    const admit = await http(svc, "POST", "/admit", proof)
     expect(admit.status === 200 && admit.json.status === "admitted", "clear wallet admitted", admit)
+    const reused = await http(svc, "POST", "/admit", proof)
+    expect(reused.status === 401 && reused.json.code === "INVALID_PROOF", "reused signature → 401 INVALID_PROOF", reused)
     const cred = admit.json.credential?.address as Address
     const status = await http(svc, "GET", `/credential/${trader.kp.address}`)
     const nowSec = Math.floor(Date.now() / 1000)
     expect(status.json.status === "admitted" && status.json.admitted === true, "GET /credential says admitted", status.json)
     expect(Math.abs(status.json.expiresAtUnix - (nowSec + 30 * 86_400)) < 3_600, `attestation expiry ≈ now + 30 days (${status.json.expiresAt})`, status.json.expiresAtUnix)
     expect(status.json.stockAccount?.state === "thawed", "wallet's BWRS account thawed by the venue key", status.json.stockAccount)
-    const again = await http(svc, "POST", "/admit", { wallet: trader.kp.address })
+    const again = await admitVia(svc, trader.kp, token)
     expect(again.status === 200 && again.json.alreadyAdmitted === true && again.json.signature === null, "re-admission is idempotent (no transaction)", again.json)
     await swap(chain, venue, trader, cred, 100n * ONE)
     const bought = await withRetry(() => readTokenAccount(chain.rpc, trader.stock))
@@ -145,7 +163,7 @@ async function main() {
     // 2. SDN fixture wallet (and a real SDN-listed SOL address) refused.
     const fixture = loadFixture(DEFAULT_FIXTURE)[0].address
     for (const [label, wallet] of [["SDN-fixture wallet", fixture], ["real SDN-listed SOL address", REAL_SDN_SOL]] as const) {
-      const refused = await http(svc, "POST", "/admit", { wallet })
+      const refused = await http(svc, "POST", "/admit", { wallet }, token)
       expect(refused.status === 403 && refused.json.code === "SANCTIONED", `${label} refused admission (403 SANCTIONED)`, refused)
       const st = await http(svc, "GET", `/credential/${wallet}`)
       expect(st.json.admitted === false && st.json.stockAccount?.state === "missing", `${label}: no credential issued, no BWRS account thawed`, st.json)
@@ -163,7 +181,7 @@ async function main() {
     const after = await http(svc, "GET", `/credential/${trader.kp.address}`)
     expect(after.json.status === "revoked" && after.json.stockAccount?.state === "frozen", "status: revoked, BWRS account frozen again", after.json)
     await expectFailure("revoked wallet's next swap fails NotAdmitted (6000)", () => swap(chain, venue, trader, cred, 10n * ONE), NOT_ADMITTED)
-    const selfReadmit = await http(svc, "POST", "/admit", { wallet: trader.kp.address })
+    const selfReadmit = await admitVia(svc, trader.kp, token)
     expect(selfReadmit.status === 403 && selfReadmit.json.code === "REVOKED", "revocation is sticky: the wallet cannot re-admit itself (403 REVOKED)", selfReadmit)
     const opReadmit = await http(svc, "POST", "/admit", { wallet: trader.kp.address }, token)
     expect(opReadmit.status === 200 && opReadmit.json.alreadyAdmitted === false, "operator re-admits the wallet with a fresh attestation", opReadmit.json)
@@ -175,13 +193,42 @@ async function main() {
     const msvc = await startServer({ ...config, gate: { kind: "membership", programId: venue.programId, venue: venue.keys.venue }, logPath: join(tmp, "membership-log.jsonl") })
     services.push(msvc)
     const member = await fundedTrader(chain, fork.rpcUrl, 100n * ONE, venue.keys.stockMint)
-    const madmit = await admitVia(msvc, member.kp.address, token)
+    const madmit = await admitVia(msvc, member.kp, token)
     expect(madmit.status === 200 && madmit.json.credential?.kind === "membership", "membership fallback: wallet admitted by grant_member", madmit.json)
     await swap(chain, venue, member, madmit.json.credential.address, 10n * ONE)
     expect((await withRetry(() => readTokenAccount(chain.rpc, member.stock))).amount > 0n, "membership fallback: admitted wallet's swap succeeds")
     const mrevoke = await http(msvc, "POST", "/revoke", { wallet: member.kp.address }, token)
     expect(mrevoke.status === 200, "membership fallback: revoke_member", mrevoke.json)
     await expectFailure("membership fallback: next swap fails NotAdmitted (6000)", () => swap(chain, venue, member, madmit.json.credential.address, 10n * ONE), NOT_ADMITTED)
+
+    const limited = await startServer({ ...config, dailyCap: 0, logPath: join(tmp, "cap-log.jsonl"), port: 0 })
+    services.push(limited)
+    const fresh = await generateKeyPairSigner()
+    const cap = await http(limited, "POST", "/admit", await signedBody(limited, fresh))
+    expect(cap.status === 429 && cap.json.code === "DAILY_CAP", "daily admission cap → 429 DAILY_CAP", cap)
+
+    const rateSvc = await startServer({ ...config, logPath: join(tmp, "rate-log.jsonl"), port: 0 })
+    services.push(rateSvc)
+    const rateWallet = (await generateKeyPairSigner()).address
+    for (let i = 0; i < 10; i++) await http(rateSvc, "GET", `/admit/challenge?wallet=${rateWallet}`)
+    const rate = await http(rateSvc, "GET", `/admit/challenge?wallet=${rateWallet}`)
+    expect(rate.status === 429 && rate.json.code === "RATE_LIMITED", "challenge rate limit → 429 RATE_LIMITED", rate)
+
+    const testMint = await createTestUsdc(chain, { payer: issuer, mint: await generateKeyPairSigner(), mintAuthority: issuer.address })
+    const fundingLog = new ScreeningLog(join(tmp, "funding-log.jsonl"))
+    const funder = createDevnetFunder({ chain, payer: issuer, usdcMint: testMint.mint, log: fundingLog,
+      solTarget: 10_000_000n, usdcTarget: 1_000_000n, dailyCap: 1 })
+    const fundedWallet = (await generateKeyPairSigner()).address
+    const funded = await funder.fund(fundedWallet)
+    const [fundedAta] = await findAssociatedTokenPda({ owner: fundedWallet, mint: testMint.mint, tokenProgram: TOKEN_PROGRAM_ADDRESS })
+    const sol = await chain.rpc.getBalance(fundedWallet).send()
+    const testUsdc = await chain.rpc.getTokenAccountBalance(fundedAta).send()
+    expect(funded.status === "funded" && sol.value >= 10_000_000n && testUsdc.value.amount === "1000000", "devnet funding instructions delivered fee SOL and 1 test USDC", funded)
+    const repeat = await funder.fund(fundedWallet)
+    expect(repeat.status === "already_funded" && repeat.signature === null, "wallet is funded only once", repeat)
+    const next = (await generateKeyPairSigner()).address
+    try { await funder.fund(next); expect(false, "funding daily cap → 429 DAILY_CAP") }
+    catch (error) { expect((error as { code?: string }).code === "DAILY_CAP", "funding daily cap → 429 DAILY_CAP") }
   } finally {
     for (const s of services) await s.close()
     await fork.stop()

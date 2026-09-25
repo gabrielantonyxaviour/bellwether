@@ -4,12 +4,14 @@
  *   npx tsx --test services/credential/credential.test.ts
  */
 import assert from "node:assert/strict"
+import { generateKeyPairSync, sign } from "node:crypto"
 import { mkdtempSync, readFileSync, existsSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { test } from "node:test"
-import { address, generateKeyPairSigner, getAddressEncoder, type Address } from "@solana/kit"
+import { address, generateKeyPairSigner, getAddressEncoder, getBase58Decoder, type Address } from "@solana/kit"
 import { createApp } from "./app.js"
+import { createChallenges } from "./challenge.js"
 import { AdmissionError, type Admissions } from "./admission.js"
 import { gateAdmits, parseAttestation } from "./attestation.js"
 import { Screener, loadFixture, loadOfficialList, parseSdnXml } from "./sdn.js"
@@ -136,7 +138,7 @@ function fakeAdmissions(sanctioned: string): Admissions & { revoked: string[]; o
     admit: async (wallet, opts) => {
       if (opts?.operator) operatorAdmits.push(wallet)
       if (wallet === sanctioned) throw new AdmissionError("SANCTIONED", 403, "wallet matches the OFAC SDN list")
-      return { label: LABEL, wallet, status: "admitted" as const, alreadyAdmitted: false, expiresAt: "2026-10-25T00:00:00.000Z", expiresAtUnix: 1, credential: { kind: "sas" as const, address: wallet }, stockAccount: { address: wallet, state: "thawed" as const }, signature: "sig" }
+      return { label: LABEL, wallet, status: "admitted" as const, alreadyAdmitted: false, expiresAt: "2026-10-25T00:00:00.000Z", expiresAtUnix: 1, credential: { kind: "sas" as const, address: wallet }, stockAccount: { address: wallet, state: "thawed" as const }, signature: "sig", funding: null }
     },
     revoke: async (wallet) => { revoked.push(wallet); return { label: LABEL, wallet, status: "revoked" as const, signature: "sig" } },
     status: async (wallet) => {
@@ -147,8 +149,27 @@ function fakeAdmissions(sanctioned: string): Admissions & { revoked: string[]; o
   }
 }
 
+test("challenge rejects a prior issuance, altered message, wrong wallet and expiry", () => {
+  const { publicKey, privateKey } = generateKeyPairSync("ed25519")
+  const wallet = getBase58Decoder().decode(publicKey.export({ format: "der", type: "spki" }).subarray(-32)) as Address
+  let now = 1_790_000_000_000
+  const challenges = createChallenges(() => now)
+  const first = challenges.issue(wallet)
+  const firstSignature = sign(null, Buffer.from(first.message), privateKey).toString("base64")
+  const second = challenges.issue(wallet)
+  assert.throws(() => challenges.consume(wallet, first.message, firstSignature), (error: any) => error.code === "INVALID_PROOF")
+  const secondSignature = sign(null, Buffer.from(second.message), privateKey).toString("base64")
+  assert.throws(() => challenges.consume(wallet, second.message + " ", secondSignature), (error: any) => error.code === "INVALID_PROOF")
+  const other = getBase58Decoder().decode(generateKeyPairSync("ed25519").publicKey.export({ format: "der", type: "spki" }).subarray(-32)) as Address
+  const otherChallenge = challenges.issue(other)
+  assert.throws(() => challenges.consume(other, otherChallenge.message, secondSignature), (error: any) => error.code === "INVALID_PROOF")
+  now += 5 * 60_000
+  assert.throws(() => challenges.consume(wallet, second.message, secondSignature), (error: any) => error.code === "INVALID_PROOF")
+})
+
 test("HTTP: zod-validated inputs, {error, code} errors, operator token on revoke, no leaked internals", async () => {
-  const wallet = (await generateKeyPairSigner()).address
+  const { publicKey, privateKey } = generateKeyPairSync("ed25519")
+  const wallet = getBase58Decoder().decode(publicKey.export({ format: "der", type: "spki" }).subarray(-32)) as Address
   const bad = (await generateKeyPairSigner()).address
   const admissions = fakeAdmissions(bad)
   const app = createApp(admissions, { operatorToken: "op-secret", corsOrigin: "*" })
@@ -161,18 +182,30 @@ test("HTTP: zod-validated inputs, {error, code} errors, operator token on revoke
   res = await post("/admit", "{oops")
   assert.equal(res.status, 400)
   assert.equal((await res.json()).code, "INVALID_INPUT")
-  res = await post("/admit", { wallet: bad })
+  res = await post("/admit", { wallet: bad }, { authorization: "Bearer op-secret" })
   assert.equal(res.status, 403)
   assert.deepEqual(Object.keys(await res.json()).sort(), ["code", "error"])
   res = await post("/admit", { wallet })
+  assert.equal(res.status, 401, "public admission requires wallet proof")
+  const challenge = await (await app.request(`/admit/challenge?wallet=${wallet}`)).json() as { wallet: string; message: string }
+  assert.equal(challenge.wallet, wallet)
+  assert.match(challenge.message, /Bellwether test admission/)
+  const signature = sign(null, Buffer.from(challenge.message, "utf8"), privateKey).toString("base64")
+  res = await post("/admit", { wallet, message: challenge.message, signature: "A".repeat(86) + "==" })
+  assert.equal(res.status, 401)
+  assert.equal((await res.json()).code, "INVALID_PROOF")
+  res = await post("/admit", { wallet, message: challenge.message, signature })
   assert.equal(res.status, 200)
   assert.equal((await res.json()).label, "test admission, not KYC")
+  res = await post("/admit", { wallet, message: challenge.message, signature })
+  assert.equal(res.status, 401, "a valid signature is single-use")
+  assert.equal((await res.json()).code, "INVALID_PROOF")
 
   res = await post("/admit", { wallet }, { authorization: "Bearer wrong" })
   assert.equal(res.status, 401)
   res = await post("/admit", { wallet }, { authorization: "Bearer op-secret" })
   assert.equal(res.status, 200)
-  assert.deepEqual(admissions.operatorAdmits, [wallet])
+  assert.deepEqual(admissions.operatorAdmits, [bad, wallet])
 
   res = await post("/revoke", { wallet })
   assert.equal(res.status, 401)

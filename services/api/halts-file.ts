@@ -50,7 +50,7 @@ export function fileHaltSource(path: string): HaltSource {
         else skipped++
       }
       entries.sort((a, b) => (b.nasdaq_halt_time ?? b.feed_seen_at ?? "").localeCompare(a.nasdaq_halt_time ?? a.feed_seen_at ?? ""))
-      return { source: path, entries, skipped, relay: read.relay }
+      return { source: "Nasdaq Trader halt feed", entries, skipped, relay: read.relay }
     },
   }
 }

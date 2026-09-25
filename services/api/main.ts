@@ -5,6 +5,11 @@
  * services/indexer/config.ts.
  */
 import { serve } from "@hono/node-server"
+import { readFileSync } from "node:fs"
+import { isAddress } from "@solana/kit"
+import { noticeDraftFor } from "../notice/index.js"
+import { buildRehearsalReport, LATEST_REPORT_PATH } from "../rehearsal/report.js"
+import { RehearsalReportSchema } from "../rehearsal/schema.js"
 import { loadTapeConfig } from "../indexer/config.js"
 import { openNodeSqlite } from "../indexer/node-sqlite.js"
 import { SqlTapeStore } from "../indexer/sql-store.js"
@@ -19,6 +24,13 @@ async function main() {
     store,
     halts: fileHaltSource(config.haltLedgerPath),
     venue: { programId: config.programId, cluster: config.cluster, retentionDays: config.retentionDays },
+    operatorToken: process.env.CREDENTIAL_OPERATOR_TOKEN ?? null,
+    noticeDraft: process.env.BELLWETHER_VENUE && isAddress(process.env.BELLWETHER_VENUE)
+      ? () => noticeDraftFor({ cluster: config.cluster, rpcUrl: config.rpcUrl, programId: config.programId, venue: process.env.BELLWETHER_VENUE })
+      : undefined,
+    rehearsalReport: async (refresh) => refresh
+      ? buildRehearsalReport()
+      : RehearsalReportSchema.parse(JSON.parse(readFileSync(LATEST_REPORT_PATH, "utf8"))),
   })
   const server = serve({ fetch: app.fetch, hostname: config.apiHost, port: config.apiPort }, (info) => {
     process.stdout.write(`[api] listening on http://${config.apiHost}:${info.port} db ${config.dbPath} halts ${config.haltLedgerPath}\n`)

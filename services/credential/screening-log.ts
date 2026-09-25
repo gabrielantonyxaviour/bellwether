@@ -6,7 +6,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs"
 import { dirname } from "node:path"
 import { LABEL } from "./labels.js"
 
-export type LogEvent = "screened" | "admitted" | "revoked" | "error"
+export type LogEvent = "screened" | "admitted" | "revoked" | "funded" | "error"
 
 export interface LogEntry {
   at: string

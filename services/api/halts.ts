@@ -95,6 +95,6 @@ export function normalizeRelayHealth(raw: unknown): RelayHealth | null {
     consecutive_failures: count(o.consecutiveFailures),
     last_heartbeat_at: toIso(o.lastHeartbeatAt),
     feed_published_at: toIso(o.feedPublishedAt),
-    source: text(o.lastSource),
+    source: o.lastSource === "nasdaq" || o.lastSource === "nyse" ? o.lastSource : null,
   }
 }

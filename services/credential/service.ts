@@ -9,6 +9,7 @@ import { serve } from "@hono/node-server"
 import { createChain } from "../../scripts/assets/tx.js"
 import { createAdmissions, type Admissions } from "./admission.js"
 import { createApp } from "./app.js"
+import { createDevnetFunder } from "./funding.js"
 import type { CredentialBackend } from "./backend.js"
 import type { CredentialConfig } from "./config.js"
 import { LABEL } from "./labels.js"
@@ -44,9 +45,11 @@ export async function createService(config: CredentialConfig): Promise<Admission
     cachePath: config.sdnCachePath, url: config.sdnUrl, maxAgeMs: config.sdnMaxAgeMs,
     fixture: config.fixturePath ? loadFixture(config.fixturePath) : [],
   })
+  const log = new ScreeningLog(config.logPath)
   return createAdmissions({
     cluster: config.cluster, chain, payer: config.payer, freezeAuthority: config.freezeAuthority, stockMint: config.stockMint,
-    backend, screening, log: new ScreeningLog(config.logPath), ttlSeconds: config.ttlSeconds,
+    backend, screening, log, ttlSeconds: config.ttlSeconds, dailyCap: config.dailyCap,
+    funder: config.funding ? createDevnetFunder({ chain, payer: config.payer, log, ...config.funding }) : undefined,
   })
 }
 

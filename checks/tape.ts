@@ -1,18 +1,8 @@
 /**
- * Accept check for blk_tape:
- *   npx tsx checks/tape.ts
- *
- * Starts its own Surfpool mainnet fork on 127.0.0.1:8930 (ws 8931), deploys the prebuilt
- * programs/venue/target/deploy/bellwether_venue.so at a throwaway program id, and stands a market
- * up with throwaway keys (rehearsal stock vs the fork's real USDC, membership credential). Then:
- *  1. a buy lands BEFORE the indexer runs, so it must arrive through the signature backfill;
- *  2. the indexer and API start as their own processes (services/indexer/main.ts, services/api/main.ts);
- *  3. a sell lands while they run and must be in GET /tape within 10 seconds (websocket path);
- *  4. every print is checked against balances and accounts read independently from the fork:
- *     symbols, USD price, size, UTC time at the pool, direction, pool and contract address,
- *     rolling 24-hour pair volume and end-of-day pool size; plus /symbols, /venue, /halts,
- *     validation errors in {error, code} form, CORS and the 30-day window.
- * Kills only the processes it started, by pid. Exits non-zero on any mismatch.
+ * blk_tape acceptance check: npx tsx checks/tape.ts.
+ * Own Surfpool fork on 8930/8931; backfills a buy, indexes a live sell, and checks prints
+ * against independent chain balances, public API routes, CORS, errors and retention.
+ * Kills only the processes it started. Exits non-zero on any mismatch.
  */
 import { spawn, execFileSync, type ChildProcess } from "node:child_process"
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
@@ -203,7 +193,7 @@ async function run(chain: Chain, tmp: string) {
   const port = await freePort()
   const api = `http://127.0.0.1:${port}`
   const env = {
-    BELLWETHER_PROGRAM_ID: venue.program, BELLWETHER_CLUSTER: "fork", BELLWETHER_RPC_URL: chain.rpcUrl, BELLWETHER_WS_URL: WS_URL,
+    BELLWETHER_PROGRAM_ID: venue.program, BELLWETHER_VENUE: venue.venue, BELLWETHER_CLUSTER: "fork", BELLWETHER_RPC_URL: chain.rpcUrl, BELLWETHER_WS_URL: WS_URL,
     BELLWETHER_TAPE_DB: join(tmp, "tape.sqlite"), BELLWETHER_API_HOST: "127.0.0.1", BELLWETHER_API_PORT: String(port),
     // A slow safety-net poll: a print inside 10 s after this point can only have come over the websocket.
     BELLWETHER_TAPE_POLL_MS: "60000", BELLWETHER_TAPE_POOL_REFRESH_MS: "5000", BELLWETHER_HALT_LEDGER: join(tmp, "no-ledger.json"),
@@ -235,7 +225,9 @@ async function run(chain: Chain, tmp: string) {
   const date = utcDate(sell.blockTime)
   const { status, headers, body } = await getJson(`${api}/tape?date=${date}&symbol=BWRS`)
   expect(status === 200 && (headers.get("content-type") ?? "").includes("application/json"), "GET /tape is 200 application/json", status)
-  expect(headers.get("access-control-allow-origin") === "*", "GET /tape is CORS-open", headers.get("access-control-allow-origin"))
+  expect(headers.get("access-control-allow-origin") === null, "GET /tape does not grant unrequested CORS", headers.get("access-control-allow-origin"))
+  const publicOrigin = await fetch(`${api}/tape`, { headers: { origin: "https://bellwether.larinova.com" } })
+  expect(publicOrigin.headers.get("access-control-allow-origin") === "https://bellwether.larinova.com", "public site origin is allowed")
   const print1 = body.prints.find((p: Json) => p.signature === sig1)
   const print2 = body.prints.find((p: Json) => p.signature === sig2)
   if (utcDate(buy.blockTime) === date) checkPrint("buy", print1, buy, venue)
@@ -275,6 +267,12 @@ async function run(chain: Chain, tmp: string) {
   expect(v.retention_days >= 30 && /USDC/.test(v.usd_method) && v.indexer?.stale === false, "GET /venue discloses the USD method, ≥30-day retention and a fresh indexer", [v.retention_days, v.indexer?.stale])
   const halts = await getJson(`${api}/halts`)
   expect(halts.status === 200 && Array.isArray(halts.body.halts), "GET /halts serves the ledger (empty without a relay ledger)", halts.body)
+  const notice = await getJson(`${api}/notice/draft`)
+  expect(notice.status === 200 && notice.body.chain?.program?.id === venue.program && notice.body.items?.length === 30,
+    "GET /notice/draft names the fork program and all 30 items", notice.body.chain?.program?.id)
+  const rehearsal = await getJson(`${api}/rehearsal/fwdi`)
+  expect(rehearsal.status === 200 && rehearsal.body.symbol === "FWDI" && rehearsal.body.mint?.address === "7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9",
+    "GET /rehearsal/fwdi returns the recorded real FWDI authority report", rehearsal.body.mint?.address)
 
   const edge = await getJson(`${api}/tape?date=${utcDate(Math.floor(Date.now() / 1000) - 29 * DAY_S)}`)
   expect(edge.status === 200 && Array.isArray(edge.body.prints), "a date 29 days back is inside the served window", edge.status)
