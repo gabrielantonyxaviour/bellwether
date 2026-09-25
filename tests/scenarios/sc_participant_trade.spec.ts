@@ -8,8 +8,9 @@
  */
 import { readFileSync } from "node:fs"
 import { address, createSolanaRpc, generateKeyPairSigner, type KeyPairSigner } from "@solana/kit"
-import { TOKEN_PROGRAM_ADDRESS, findAssociatedTokenPda } from "@solana-program/token"
-import { TOKEN_2022_PROGRAM_ADDRESS, findAssociatedTokenPda as stockAta } from "@solana-program/token-2022"
+import { TOKEN_PROGRAM_ADDRESS, findAssociatedTokenPda, getCreateAssociatedTokenIdempotentInstruction } from "@solana-program/token"
+import { TOKEN_2022_PROGRAM_ADDRESS, findAssociatedTokenPda as stockAta,
+  getCreateAssociatedTokenIdempotentInstruction as createStockAta } from "@solana-program/token-2022"
 import { fetchRaw } from "../../services/credential/backend"
 import { attestationAddress } from "../../services/credential/sas"
 import { swapIx, BUY, type PoolKeys } from "../../services/credential/venue-ix"
@@ -98,7 +99,11 @@ scenario("sc_participant_trade", "participant", () => {
     await expect(page.getByRole("heading", { name: "BWRS / USDC" })).toBeVisible({ timeout: 30_000 })
     await page.getByRole("textbox", { name: "You pay · USDC" }).fill("0.05")
     await page.getByRole("button", { name: "Review buy" }).click()
+    const browserSend = page.waitForRequest((request) => request.url() === `${API}/rpc` &&
+      request.method() === "POST" && request.headers()["solana-client"] === "bellwether-journey" &&
+      request.postDataJSON()?.method === "sendTransaction")
     await page.getByRole("button", { name: "Confirm swap" }).click()
+    expect((await browserSend).headers()["solana-client"]).toBe("bellwether-journey")
     await expect(page.getByText("Swap confirmed.", { exact: false })).toBeVisible({ timeout: 120_000 })
     const href = await page.getByRole("link", { name: /View transaction/ }).getAttribute("href")
     swapSignature = href?.match(/\/tx\/([^?]+)/)?.[1] ?? ""
@@ -114,6 +119,12 @@ scenario("sc_participant_trade", "participant", () => {
       tokenProgram: TOKEN_2022_PROGRAM_ADDRESS })
     const [usdc] = await findAssociatedTokenPda({ owner: unadmitted.address, mint: market.usdcMint,
       tokenProgram: TOKEN_PROGRAM_ADDRESS })
+    await createDeploymentChain(d.rpcUrl).send([
+      createStockAta({ payer: wallet, ata: stock, owner: unadmitted.address, mint: market.stockMint,
+        tokenProgram: TOKEN_2022_PROGRAM_ADDRESS }),
+      getCreateAssociatedTokenIdempotentInstruction({ payer: wallet, ata: usdc,
+        owner: unadmitted.address, mint: market.usdcMint, tokenProgram: TOKEN_PROGRAM_ADDRESS }),
+    ], wallet)
     try {
       const signature = await createDeploymentChain(d.rpcUrl).send([swapIx(address(d.programId), market,
         unadmitted, stock, usdc, await credentialFor(unadmitted), BUY, 1_000n, 1n)], wallet)
