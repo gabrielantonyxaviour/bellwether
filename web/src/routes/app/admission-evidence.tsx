@@ -32,6 +32,7 @@ export function AdmissionEvidence({ status, result }: { status: CredentialStatus
         {sdn.fixtureAddresses > 0 && <EvidenceRow label="Rehearsal-only addresses">{sdn.fixtureAddresses.toLocaleString()}</EvidenceRow>}
         <EvidenceRow label="Fetched by issuer">{new Date(sdn.fetchedAt).toLocaleString()}{sdn.stale ? " · cached list is stale" : ""}</EvidenceRow>
       </dl>}
+      {sdn && <p className="mt-1 text-xs text-muted-foreground">List details show the issuer’s current cache; the wallet was screened when its credential was issued.</p>}
     </div>
     <div>
       <h4 className="text-sm font-medium">Credential issued via Solana Attestation Service</h4>
