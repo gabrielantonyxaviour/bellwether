@@ -12,7 +12,7 @@ const fs = require('node:fs')
 const source = JSON.parse(fs.readFileSync('scripts/deploy/deployments/devnet.web.json', 'utf8'))
 source.apiBaseUrl = 'https://bellwether-api.larinova.com'
 source.credentialApiUrl = source.apiBaseUrl
-source.rpcUrl = 'https://api.devnet.solana.com'
+source.rpcUrl = 'https://bellwether-api.larinova.com/rpc'
 source.wsUrl = 'wss://api.devnet.solana.com'
 fs.writeFileSync('web/public/config.json', JSON.stringify(source, null, 2) + '\n')
 NODE

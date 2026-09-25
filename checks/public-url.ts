@@ -20,7 +20,7 @@ async function main() {
   const deployment = loadDeployment("devnet")
   assert(deployment?.programId && deployment.signatures.publicFreshSwap, "missing devnet public proof")
   const config = z.object({ cluster: z.literal("devnet"), programId: z.string(),
-    apiBaseUrl: z.literal(api), credentialApiUrl: z.literal(api), rpcUrl: z.literal("https://api.devnet.solana.com") })
+    apiBaseUrl: z.literal(api), credentialApiUrl: z.literal(api), rpcUrl: z.literal(`${api}/rpc`) })
     .passthrough().parse(await json(`${web}/config.json`))
   assert.equal(config.programId, deployment.programId)
   z.object({ ok: z.literal(true), cluster: z.literal("devnet") }).passthrough().parse(await json(`${api}/health`))

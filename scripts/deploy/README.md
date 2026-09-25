@@ -39,7 +39,9 @@ local API URLs. It does not publish the app or the services.
   <https://bellwether.larinova.com/about>. The dated link contains the finalized fresh-wallet swap.
 - API and admission: <https://bellwether-api.larinova.com>. `/health` and `/admit/*` reach the
   credential service; `/tape`, `/venue`, `/halts` and other public reads reach the venue API.
-- Devnet RPC: <https://api.devnet.solana.com>. The browser's public configuration is
+- Browser devnet RPC: <https://bellwether-api.larinova.com/rpc>, a bounded gateway to the
+  devnet RPC with retry and short read coalescing. Browser chain reads poll over HTTP; no
+  WebSocket connection is required. The browser's public configuration is
   [`web/public/config.json`](../../web/public/config.json). No private key or operator token is
   included in the Pages build.
 
