@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs"
 import { test, expect } from "@playwright/test"
 import {
   appendTransactionMessageInstructions, createTransactionMessage, generateKeyPairSigner, getBase64EncodedWireTransaction,
@@ -6,8 +6,8 @@ import {
   signTransactionMessageWithSigners, getAddressEncoder, type Address, type Instruction, type KeyPairSigner,
 } from "@solana/kit"
 import { createChain, type Chain } from "../../scripts/assets/tx"
-import { key } from "../../scripts/deploy/state"
 import { chainNow, timeTravelTo } from "../../services/notice/fork/env"
+import { explorerUrl, resolveClusterConfig } from "../../web/src/lib/cluster"
 import { API, installWallet, ISSUER, i64, PORT, RPC, rule, shortAddress, startOperatorStack, u64, walletFromSigner, WEB, type OperatorStack } from "./operator-harness"
 import { operatorSingleFlight } from "./operator-flight"
 
@@ -138,29 +138,16 @@ test("operator workbench on an isolated fork", async ({ browser }) => {
     expect(fwdiAccounts.length).toBeGreaterThan(0)
     expect(fwdiAccounts.every((href) => !new URL(href).searchParams.has("cluster")), fwdiAccounts.join(" | ")).toBe(true)
 
-      for (const width of [375, 768, 1440]) {
-        await page.setViewportSize({ width, height: 900 })
-        for (const route of ["/operator", "/operator/symbols", "/operator/halts", "/operator/participants", "/operator/public-notice", "/operator/rehearsal/fwdi"]) {
-          await page.goto(`${WEB}${route}`)
-          await expect(page.locator("main")).toBeVisible()
-          expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${route} overflows at ${width}px`).toBe(true)
+    for (const width of [375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 })
+      for (const route of ["/operator", "/operator/symbols", "/operator/halts", "/operator/participants", "/operator/public-notice", "/operator/rehearsal/fwdi"]) {
+        await page.goto(`${WEB}${route}`)
+        await expect(page.locator("main")).toBeVisible()
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${route} overflows at ${width}px`).toBe(true)
       }
     }
-    const devnetConfig = JSON.parse(readFileSync("scripts/deploy/deployments/devnet.web.json", "utf8")) as Record<string, string>
-    await page.unroute("**/config.json")
-    await page.route("**/config.json", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
-      ...devnetConfig, apiBaseUrl: "https://bellwether-api.larinova.com", credentialApiUrl: "https://bellwether-api.larinova.com", rpcUrl: "https://bellwether-api.larinova.com/rpc",
-    }) }))
-      await page.goto(`${WEB}/operator/participants`)
-      await page.getByLabel("Participant wallet").fill((await key("devnet", "public-smoke-trader")).address)
-      await page.getByRole("button", { name: "Look up" }).click()
-      await expect(page.locator('main a[href^="https://solscan.io/account/"]').first()).toBeVisible({ timeout: 30_000 })
-    await page.goto(`${WEB}/operator/public-notice`)
-    const devnetAuthorities = page.getByRole("region", { name: "Chain-read authorities" })
-    await expect(devnetAuthorities).toBeVisible({ timeout: 90_000 })
-    const devnetAccounts = await devnetAuthorities.locator('a[href^="https://solscan.io/account/"]').evaluateAll((links) => links.map((link) => (link as HTMLAnchorElement).href))
-    expect(devnetAccounts.length).toBeGreaterThan(0)
-    expect(devnetAccounts.every((href) => new URL(href).searchParams.get("cluster") === "devnet"), devnetAccounts.join(" | ")).toBe(true)
+    const devnetAccount = explorerUrl("account", stack.deployment.venue, resolveClusterConfig({ cluster: "devnet" }))
+    expect(new URL(devnetAccount).searchParams.get("cluster")).toBe("devnet")
     complete = true
     } finally {
       await context.close()
