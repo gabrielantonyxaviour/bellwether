@@ -1852,14 +1852,14 @@
       "roles": [
         "public"
       ],
-      "startingState": "Mainnet deployment live with smoke transactions recorded.",
+      "startingState": "Devnet deployment live with an executable program and confirmed smoke transactions recorded; mainnet may be added later.",
       "actions": [
         "Open /",
         "Open /explorer",
         "Open /about and follow explorer links"
       ],
-      "expectedVisible": "Home states what Bellwether is and links to trade, tape and proof; tape lists prints; proof lists program id, accounts and signatures with working explorer links and the real-vs-stand-in table.",
-      "expectedData": "Explorer links resolve to the recorded mainnet signatures and executable program id."
+      "expectedVisible": "Home states what Bellwether is and links to trade, explorer and About; explorer lists prints; About lists the devnet program id, accounts and signatures with working Solscan ?cluster=devnet links and the real-vs-stand-in table.",
+      "expectedData": "Devnet Solscan links resolve to the recorded confirmed signatures and executable program id."
     }
   ]
 }
