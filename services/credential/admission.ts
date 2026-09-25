@@ -167,6 +167,14 @@ export function createAdmissions(d: AdmissionDeps): Admissions {
       }
       d.log.append({ wallet, event: "screened", result: "clear", list: screen.list })
 
+      if (d.dailyCap !== null && d.log.lastCredentialEvent(wallet)?.event !== "admitted") {
+        const today = new Date().toISOString().slice(0, 10)
+        const issuedToday = d.log.recent(Number.MAX_SAFE_INTEGER).filter((entry) =>
+          entry.event === "admitted" && entry.at.slice(0, 10) === today && typeof entry.signature === "string",
+        ).length
+        if (issuedToday >= d.dailyCap) throw new AdmissionError("DAILY_CAP", 429, "The daily test-admission limit has been reached.")
+      }
+
       await ready()
       const [now, existing, stock] = await Promise.all([chainNow(d.chain.rpc), d.backend.read(wallet), stockAccount(wallet)])
       const valid = existing.exists && existing.expiresAt !== null && existing.expiresAt !== 0n && existing.expiresAt > now
