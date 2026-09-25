@@ -19,6 +19,7 @@ import { createMarketReader } from "./market.js"
 import { NoticeDraftSchema } from "../notice/schema.js"
 import { RehearsalReportSchema } from "../rehearsal/schema.js"
 import { eodView, pairView, printView } from "./present.js"
+import { createRpcGateway, type RpcGateway } from "./rpc.js"
 
 export interface ApiDeps {
   store: TapeStore
@@ -30,6 +31,7 @@ export interface ApiDeps {
   noticeDraft?: () => Promise<unknown>
   rehearsalReport?: (refresh: boolean) => Promise<unknown>
   operatorToken?: string | null
+  rpc?: RpcGateway
 }
 
 const DateParam = z
@@ -75,7 +77,7 @@ export function createApp(deps: ApiDeps): Hono {
 
   app.use("*", cors({
     origin: (origin) => origin === "https://bellwether.larinova.com" || /^http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?$/.test(origin) ? origin : "",
-    allowMethods: ["GET", "OPTIONS"], maxAge: 86_400,
+    allowMethods: ["GET", "POST", "OPTIONS"], allowHeaders: ["Content-Type"], maxAge: 86_400,
   }))
   app.use("*", async (c, next) => {
     await next()
@@ -107,6 +109,7 @@ export function createApp(deps: ApiDeps): Hono {
         "/market/FWDI": "underlying stock daily Yahoo Finance chart: ?range=1mo|3mo|6mo|1y&interval=1d",
         "/notice/draft": "public notice with chain-read facts and operator-input flags",
         "/rehearsal/fwdi": "latest FWDI mainnet rehearsal report; operator refresh with ?refresh=1",
+        "/rpc": "devnet JSON-RPC for account reads and signed transactions",
       },
     }))
 
@@ -131,6 +134,18 @@ export function createApp(deps: ApiDeps): Hono {
       prints: prints.map((p) => printView(p, eodByPool.get(p.pool) ?? null)),
       pairs: pairs.map((p) => p.view),
     })
+  })
+
+  const rpc = deps.rpc ?? createRpcGateway({
+    primary: process.env.RPC_UPSTREAM_URL ?? process.env.BELLWETHER_RPC_URL,
+    fallbacks: (process.env.RPC_FALLBACK_URLS ?? "https://api.devnet.solana.com").split(",").map((url) => url.trim()).filter(Boolean),
+  })
+  app.post("/rpc", async (c) => {
+    const length = Number(c.req.header("content-length") ?? "0")
+    if (length > 200_000) return c.json({ error: "RPC request is too large", code: "rpc_body_too_large" }, 413)
+    const result = await rpc(await c.req.text())
+    c.header("cache-control", "no-store")
+    return c.json(result.body, result.status as 200)
   })
 
   app.get("/symbols", async (c) => {

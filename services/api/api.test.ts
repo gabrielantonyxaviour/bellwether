@@ -146,6 +146,24 @@ test("GET /symbols and /venue describe the pool, contract address and indexer he
   assert.equal(denied.headers.get("access-control-allow-origin"), null)
 })
 
+test("POST /rpc accepts the live browser origin and keeps responses out of shared caches", async () => {
+  const app = await appWith(undefined, undefined, { rpc: async () => ({ status: 200,
+    body: { jsonrpc: "2.0", id: 1, result: { value: 42 } } }) })
+  const preflight = await app.request("/rpc", { method: "OPTIONS", headers: {
+    origin: "https://bellwether.larinova.com", "access-control-request-method": "POST",
+    "access-control-request-headers": "content-type",
+  } })
+  assert.equal(preflight.headers.get("access-control-allow-origin"), "https://bellwether.larinova.com")
+  assert.match(preflight.headers.get("access-control-allow-methods") ?? "", /POST/)
+  const response = await app.request("/rpc", { method: "POST", headers: {
+    origin: "https://bellwether.larinova.com", "content-type": "application/json",
+  }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: ["account"] }) })
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get("cache-control"), "no-store")
+  assert.equal(response.headers.get("access-control-allow-origin"), "https://bellwether.larinova.com")
+  assert.deepEqual(await json(response), { jsonrpc: "2.0", id: 1, result: { value: 42 } })
+})
+
 test("GET /halts: missing ledger is empty, the relay's state file is normalized, a corrupt one is a 503", async () => {
   const empty = await json(await (await appWith()).request("/halts"))
   assert.deepEqual([empty.halts, empty.source, empty.relay], [[], null, null])
