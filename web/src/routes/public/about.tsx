@@ -71,8 +71,8 @@ function ForkCard({ record }: { record: ForkRecord }) {
     <Panel title="Fork · local recording" action={<span className="text-xs text-muted-foreground">Checked {record.checkedAt.slice(0, 16)}Z</span>}>
       <div className="grid gap-4 p-3 text-sm">
         <p className="text-xs text-muted-foreground">
-          Local recording. These accounts and signatures lived on a Surfpool fork and are not on public Solscan.
-          Copy them here. The committed record is <code className="break-all">scripts/fork/out/fork-scenario.json</code>.
+          local mainnet fork (Surfpool), not publicly resolvable. Copy the signatures below.
+          The committed record is <code className="break-all">scripts/fork/out/fork-scenario.json</code>.
           Transfer-agent approval in this recording: {record.transferAgentApproval}.
         </p>
         <LocalRow label="Program" id={record.programId} />
@@ -82,7 +82,7 @@ function ForkCard({ record }: { record: ForkRecord }) {
           <ChainLink href={solscanUrl("mainnet", "token", record.fwdiMint)} id={record.fwdiMint} kind="token" />
         </div>
         <div>
-          <h3 className="mb-1 text-xs font-medium text-muted-foreground">Signatures · local recording</h3>
+          <h3 className="mb-1 text-xs font-medium text-muted-foreground">Signatures · local mainnet fork (Surfpool), not publicly resolvable</h3>
           <div className="grid gap-1">
             {orderedSignatures(record.signatures).map(([key, signature]) => <LocalRow key={key} label={key} id={signature} />)}
           </div>

@@ -34,4 +34,14 @@ describe("public links", () => {
     expect(url.searchParams.has("customUrl")).toBe(false)
     expect(url.hostname).toBe("solscan.io")
   })
+
+  it("never points Solscan at a local fork RPC", () => {
+    for (const cluster of ["devnet", "mainnet"] as const) {
+      const url = solscanUrl(cluster, "tx", "sig")
+      expect(url).not.toContain("127.0.0.1")
+      expect(url).not.toContain("customUrl")
+      expect(url).not.toContain("cluster=custom")
+    }
+    expect(new URL(solscanUrl("devnet", "tx", "sig")).searchParams.get("cluster")).toBe("devnet")
+  })
 })

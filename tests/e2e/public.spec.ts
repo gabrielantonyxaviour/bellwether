@@ -130,9 +130,12 @@ test("home, explorer and about render live devnet state", async ({ page }) => {
   expect(await devnetProgram.getAttribute("href")).toContain("cluster=devnet")
   await expect(page.getByText("Who can pause, upgrade or override")).toBeVisible()
   await expect(page.locator(`a[href*="${upgradeAuthority}"]:visible`).first()).toBeVisible({ timeout: 20_000 })
-  await expect(page.getByRole("button", { name: new RegExp(fork.signatures.fwdiSwap) })).toBeVisible()
+  await expect(page.getByText("local mainnet fork (Surfpool), not publicly resolvable").first()).toBeVisible()
+  await expect(page.getByText(fork.signatures.fwdiSwap).first()).toBeVisible()
+  await expect(page.getByRole("button", { name: new RegExp(`Copy fwdiSwap ${fork.signatures.fwdiSwap}`) })).toBeVisible()
   await expect(page.locator("a[href*='127.0.0.1']")).toHaveCount(0)
   await expect(page.locator("a[href*='cluster=custom']")).toHaveCount(0)
+  await expect(page.locator(`a[href*='${fork.signatures.fwdiSwap}']`)).toHaveCount(0)
   await expect(page.getByRole("cell", { name: "Stand-in", exact: true }).first()).toBeVisible()
 
   await page.goto(`${WEB}/tape`)

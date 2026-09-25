@@ -2,23 +2,22 @@ import { useState } from "react"
 import { shortAddress } from "@/lib/wallet"
 import type { ExplorerKind } from "@/components/public/records"
 
-/** A fork id that is not on public Solscan. The full value is copied; the page does not link it. */
+/** Fork value. Monospace and copyable. Never a Solscan link. */
 export function LocalRecording({ id, name }: { id: string; name: string }) {
   const [copied, setCopied] = useState(false)
-  const [revealed, setRevealed] = useState(false)
   async function copy() {
     try {
       await navigator.clipboard.writeText(id)
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1500)
     } catch {
-      setRevealed(true)
+      setCopied(false)
     }
   }
   return (
-    <span className="inline-flex max-w-full flex-wrap items-center justify-end gap-x-2 gap-y-1">
-      <code className={revealed ? "font-mono text-xs break-all" : "font-mono text-xs"}>{revealed ? id : shortAddress(id)}</code>
-      <button type="button" className="text-xs underline" aria-label={`Copy local recording ${name} ${id}`} onClick={() => void copy()}>
+    <span className="grid max-w-full justify-items-start gap-1">
+      <code className="block max-w-full font-mono text-xs break-all">{id}</code>
+      <button type="button" className="text-xs underline" aria-label={`Copy ${name} ${id}`} onClick={() => void copy()}>
         {copied ? "Copied" : "Copy"}
       </button>
     </span>
