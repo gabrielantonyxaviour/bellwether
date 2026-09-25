@@ -43,7 +43,7 @@ const TokenInput = ({
   const currentValue = value ?? internalValue;
 
   const handleValueChange = (values: { value: string }, info: SourceInfo) => {
-    if (info.source !== "event") return;
+    if (info.source !== "event" || !["change", "input"].includes(info.event?.type ?? "")) return;
     setInternalValue(values.value);
     onValueChange?.(values.value);
   };
