@@ -6,7 +6,8 @@ import { loadDeployment } from "../scripts/deploy/state.js"
 
 const web = "https://bellwether.larinova.com"
 const api = "https://bellwether-api.larinova.com"
-const routes = ["/", "/explorer", "/explorer?date=2026-09-25", "/app/trade/BWRS", "/operator", "/about"]
+const routes = ["/", "/explorer", "/explorer?date=2026-09-25", "/about",
+  "/app/onboard", "/app/trade/BWRS", "/app/liquidity/BWRS"]
 const widths = [375, 768, 1440]
 
 async function json(url: string): Promise<unknown> {
@@ -34,9 +35,9 @@ async function main() {
   const browser = await chromium.launch({ headless: true })
   try {
     const page = await browser.newPage()
-    for (const width of widths) {
-      await page.setViewportSize({ width, height: 900 })
-      for (const route of routes) {
+    for (const route of [...routes, "/operator"]) {
+      for (const width of widths) {
+        await page.setViewportSize({ width, height: 900 })
         const response = await page.goto(`${web}${route}`, { waitUntil: "domcontentloaded", timeout: 20_000 })
         assert.equal(response?.status(), 200, `${route} at ${width}px did not serve HTTP 200`)
         await page.getByRole("heading").first().waitFor({ state: "visible", timeout: 15_000 })
@@ -45,7 +46,7 @@ async function main() {
         const layout = await page.evaluate(() => ({ viewport: innerWidth, scroll: document.documentElement.scrollWidth }))
         assert(layout.scroll <= layout.viewport + 1, `${route} overflows horizontally at ${width}px: ${layout.scroll}px`)
         if (route.includes("date=2026-09-25")) {
-          await page.locator(`a[href*="${deployment.signatures.publicFreshSwap}"]`).first()
+          await page.locator(`a[href*="${deployment.signatures.publicFreshSwap}"]:visible`).first()
             .waitFor({ state: "visible", timeout: 15_000 })
         }
         process.stdout.write(`${route} ${width}px: HTTP 200, rendered, no overflow\n`)

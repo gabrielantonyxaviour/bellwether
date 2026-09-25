@@ -2,7 +2,7 @@
 
 Bellwether is a Solana venue-program prototype and operator workbench for the SEC's [Tokenized Securities Venue Innovation Exemption (Release 34-106402)](https://www.sec.gov/files/rules/exorders/2026/34-106402.pdf). It demonstrates permissioned rehearsal-stock swaps, exchange-halt and stale-feed stops, share budgets, listing clocks, and a public trade tape.
 
-**Status:** A fresh wallet signed admission, received devnet fee SOL and test USDC, swapped BWRS, and saw its finalized print on the [public tape](https://bellwether-api.larinova.com/tape). The web is hosted at <https://bellwether.larinova.com>. A local Surfpool mainnet fork exercised the program against the real FWDI mint. Mainnet trading is unverified. Bellwether is not an operating securities venue.
+**Status:** A fresh wallet signed admission, received devnet fee SOL and test USDC, swapped BWRS, and saw its finalized print on the [public explorer](https://bellwether.larinova.com/explorer?date=2026-09-25). The web is hosted at <https://bellwether.larinova.com>; the [public API](https://bellwether-api.larinova.com/tape?date=2026-09-25) serves the same tape. A local Surfpool mainnet fork exercised the program against the real FWDI mint. Mainnet trading is unverified. Bellwether is not an operating securities venue.
 
 ## Quick start
 
@@ -41,7 +41,7 @@ The program's swap path checks credential → halt and heartbeat freshness → a
 
 | Environment | Asset and proof | Limit |
 | --- | --- | --- |
-| Devnet | BWRS rehearsal token and **test USDC**. Program `88chqe41hw9uhqrUK6KfytQ7aZgEGJzcqszXGKJFWfuB`; [finalized fresh-wallet swap](https://solscan.io/tx/4fuqTEufSL9pWn5ohaShKyVCvMTt5eieDdXNwo3yjnd3tv1WtxeN8aJfP6Hw9vkzDXx6Ub6C1EKdEmyiJb6eiUBW?cluster=devnet) appeared on the [public tape](https://bellwether-api.larinova.com/tape). Full signatures: [`devnet.json`](../../scripts/deploy/deployments/devnet.json). | Test assets and test admission. |
+| Devnet | BWRS rehearsal token and **test USDC**. Program `88chqe41hw9uhqrUK6KfytQ7aZgEGJzcqszXGKJFWfuB`; [finalized fresh-wallet swap](https://solscan.io/tx/4fuqTEufSL9pWn5ohaShKyVCvMTt5eieDdXNwo3yjnd3tv1WtxeN8aJfP6Hw9vkzDXx6Ub6C1EKdEmyiJb6eiUBW?cluster=devnet) appeared on the [public explorer](https://bellwether.larinova.com/explorer?date=2026-09-25). Full signatures: [`devnet.json`](../../scripts/deploy/deployments/devnet.json). | Test assets and test admission. |
 | Local mainnet fork | Real FWDI mint; local fork scenario checked an FWDI swap, issuer-notice window and second-breach pause. | Fork-only cheatcodes thawed and funded FWDI accounts; local signatures are not public mainnet proof. |
 | Mainnet | **[PROGRAM ID AND VERIFIED TRANSACTIONS AFTER DEPLOYMENT]** | No mainnet execution is claimed here. |
 

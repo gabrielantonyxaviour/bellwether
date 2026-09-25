@@ -34,7 +34,9 @@ local API URLs. It does not publish the app or the services.
 ## Public devnet for judging
 
 - Web: <https://bellwether.larinova.com> (Cloudflare Pages project `bellwether`).
-- The web's human-readable public tape is at `/explorer`; environment proof is at `/about`.
+- The web's human-readable public tape is at
+  <https://bellwether.larinova.com/explorer?date=2026-09-25>; environment proof is at
+  <https://bellwether.larinova.com/about>. The dated link contains the finalized fresh-wallet swap.
 - API and admission: <https://bellwether-api.larinova.com>. `/health` and `/admit/*` reach the
   credential service; `/tape`, `/venue`, `/halts` and other public reads reach the venue API.
 - Devnet RPC: <https://api.devnet.solana.com>. The browser's public configuration is
@@ -85,7 +87,7 @@ is available only on devnet. To repeat the public proof using the saved private 
 
 ```bash
 node node_modules/tsx/dist/cli.mjs scripts/deploy/public-smoke.ts
-curl -fsS https://bellwether-api.larinova.com/tape
+curl -fsS 'https://bellwether-api.larinova.com/tape?date=2026-09-25'
 ```
 
 The public smoke uses a signed admission challenge, confirms funding balances, signs a real

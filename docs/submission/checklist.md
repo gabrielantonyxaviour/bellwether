@@ -6,7 +6,7 @@ Draft checklist. A checked box needs a saved URL, command output, or on-screen c
 
 - [x] Devnet venue program, BWRS and test USDC seeded; admitted swap finalized and appeared on `/tape`. See [`devnet.json`](../../scripts/deploy/deployments/devnet.json) and [example transaction](https://solscan.io/tx/3opPyjqKMpd5ubVimz33BX2xH87gWUcXdW6X6wpsSb3NCopRiu7oU5UNkkocoZVmnmqyupPSwpVZ3yTtvYUtCC7P?cluster=devnet).
 - [x] Local mainnet-fork scenario checked real FWDI mint, 30-day issuer window and second-breach pause. Fork-only thaw/funding are labelled as stand-ins.
-- [x] Public devnet service proof: a fresh wallet signed admission, received fee SOL and test USDC, swapped in a finalized transaction, and the same signature appeared on the [HTTPS tape](https://bellwether-api.larinova.com/tape). See [`devnet.json`](../../scripts/deploy/deployments/devnet.json).
+- [x] Public devnet service proof: a fresh wallet signed admission, received fee SOL and test USDC, swapped in a finalized transaction, and the same signature appeared on the [HTTPS API tape](https://bellwether-api.larinova.com/tape?date=2026-09-25). See [`devnet.json`](../../scripts/deploy/deployments/devnet.json). The [web explorer](https://bellwether.larinova.com/explorer?date=2026-09-25) is checked separately below.
 - [ ] Devnet **browser** journey: wallet admission → review/sign/swap → same print in public tape; refusal, halt/stale, cap, liquidity, operator and public pages checked end to end. Save proof links, environment labels and results.
 - [ ] Check each page at 375, 768 and 1440 px and resolve any blocking UI state before filming.
 - [ ] Re-run acceptance and Abel harness verification for the relevant blocks after the last edits; report the block verdicts, not a general “green.”
