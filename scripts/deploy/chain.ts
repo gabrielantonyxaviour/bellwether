@@ -3,15 +3,19 @@ import {
   appendTransactionMessageInstructions, createTransactionMessage, getBase64EncodedWireTransaction,
   getSignatureFromTransaction, pipe, setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash, signTransactionMessageWithSigners,
+  createDefaultRpcTransport, createSolanaRpcFromTransport,
   type Instruction, type TransactionSigner,
 } from "@solana/kit"
-import { createChain, type Chain } from "../assets/tx.js"
-import { withRetry } from "../../services/credential/retry.js"
+import { createChain, type Chain, type Rpc } from "../assets/tx.js"
+import { preserveMissingPreflightData, withRetry } from "../../services/credential/retry.js"
 
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export function createDeploymentChain(rpcUrl: string): Chain {
-  const base = createChain(rpcUrl)
+  const transport = createDefaultRpcTransport({ url: rpcUrl })
+  const rpcWithPreflightMessage = createSolanaRpcFromTransport((async (request) =>
+    preserveMissingPreflightData(request.payload, await transport(request))) as typeof transport) as Rpc
+  const base = createChain(rpcUrl, rpcWithPreflightMessage)
   const { rpc } = base
   async function send(instructions: Instruction[], feePayer: TransactionSigner) {
     const { value: blockhash } = await withRetry(() => rpc.getLatestBlockhash({ commitment: "confirmed" }).send(), 7, 1_000)
