@@ -6,7 +6,7 @@ import { join } from "node:path"
 
 const root = process.cwd()
 const output = join(root, "test-results")
-const paths = ["tests/e2e/operator-harness.ts", "tests/e2e/operator-flight.ts", "tests/e2e/operator.spec.ts", "web", "services", "scripts/deploy", "scripts/assets", "programs", "package.json", "pnpm-lock.yaml"]
+const paths = ["tests/e2e/operator-harness.ts", "tests/e2e/operator-flight.ts", "tests/e2e/operator.spec.ts", "playwright.config.ts", "web", "services", "scripts/deploy", "scripts/assets", "programs", "package.json", "pnpm-lock.yaml"]
 type Verdict = { passed: boolean; summary: string; owner: number; finishedAt: string }
 
 function sourceHash(): string {
