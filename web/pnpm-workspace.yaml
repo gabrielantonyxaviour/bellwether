@@ -1,0 +1,9 @@
+# web/ is its own pnpm project, separate from the root package (services, scripts, checks).
+# This file stops pnpm from walking up to the root workspace.
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@vitest/mocker@5.0.2'
+  - '@vitest/spy@5.0.2'
+  - vite@8.3.1
+  - vitest@5.0.2
