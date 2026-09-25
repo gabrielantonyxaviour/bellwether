@@ -62,6 +62,10 @@ its lid open. `com.bellwether.tunnel` keeps the named `bellwether-devnet` Cloudf
 connected. Their stdout and stderr are in `~/Library/Logs/bellwether/`; the tunnel credentials
 and private service env stay outside the web build. Stop or restart a job by its exact launchd
 label with `launchctl bootout` / `bootstrap` or `kickstart`, never by a process-name pattern.
+The relay key `B4AdoASP9LrHH9A9HRuF6tUhWqDwNAojhn74rXZtZ5gU` had 0.14967 devnet SOL
+after the finalized [`relayRunwayTopUp`](deployments/devnet.json) transfer on 25 September 2026;
+check its balance and `/halts` each day while judging is open. The Mac and internet connection
+must remain available for the tunnel and signing services to serve traffic.
 
 To redeploy the current web after screen commits, run:
 
