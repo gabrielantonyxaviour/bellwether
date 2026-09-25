@@ -6,7 +6,7 @@ import { loadDeployment } from "../scripts/deploy/state.js"
 
 const web = "https://bellwether.larinova.com"
 const api = "https://bellwether-api.larinova.com"
-const routes = ["/", "/tape", "/app/trade/BWRS", "/operator", "/proof"]
+const routes = ["/", "/explorer", "/app/trade/BWRS", "/operator", "/about"]
 const widths = [375, 768, 1440]
 
 async function json(url: string): Promise<unknown> {
@@ -44,7 +44,7 @@ async function main() {
         assert(!/coming soon|\bTODO\b/i.test(body), `${route} at ${width}px contains unfinished content`)
         const layout = await page.evaluate(() => ({ viewport: innerWidth, scroll: document.documentElement.scrollWidth }))
         assert(layout.scroll <= layout.viewport + 1, `${route} overflows horizontally at ${width}px: ${layout.scroll}px`)
-        if (route === "/tape") {
+        if (route === "/explorer") {
           await page.locator(`a[href*="${deployment.signatures.publicFreshSwap}"]`).first()
             .waitFor({ state: "visible", timeout: 15_000 })
         }

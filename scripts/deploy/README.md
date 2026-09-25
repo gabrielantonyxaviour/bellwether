@@ -34,6 +34,7 @@ local API URLs. It does not publish the app or the services.
 ## Public devnet for judging
 
 - Web: <https://bellwether.larinova.com> (Cloudflare Pages project `bellwether`).
+- The web's human-readable public tape is at `/explorer`; environment proof is at `/about`.
 - API and admission: <https://bellwether-api.larinova.com>. `/health` and `/admit/*` reach the
   credential service; `/tape`, `/venue`, `/halts` and other public reads reach the venue API.
 - Devnet RPC: <https://api.devnet.solana.com>. The browser's public configuration is
