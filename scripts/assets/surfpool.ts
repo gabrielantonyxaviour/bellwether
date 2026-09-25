@@ -66,7 +66,7 @@ async function killTree(child: ChildProcess): Promise<void> {
   for (const p of tree.filter(alive)) { try { process.kill(p, "SIGKILL") } catch { /* already gone */ } }
 }
 
-export async function startOrReuseSurfpool(options: { rpcUrl?: string; readyTimeoutMs?: number } = {}): Promise<ForkHandle> {
+export async function startOrReuseSurfpool(options: { rpcUrl?: string; readyTimeoutMs?: number; datasourceRpcUrl?: string } = {}): Promise<ForkHandle> {
   const rpcUrl = options.rpcUrl ?? "http://127.0.0.1:8899"
   const url = new URL(rpcUrl)
   const probe = await probeRpc(rpcUrl)
@@ -75,7 +75,7 @@ export async function startOrReuseSurfpool(options: { rpcUrl?: string; readyTime
   if (!["127.0.0.1", "localhost"].includes(url.hostname)) throw new Error(`refusing to start a fork on non-local host ${url.hostname}`)
 
   const port = Number(url.port || 8899)
-  const datasource = process.env.SURFPOOL_DATASOURCE_RPC_URL
+  const datasource = options.datasourceRpcUrl ?? process.env.SURFPOOL_DATASOURCE_RPC_URL
   const args = [
     "start", ...(datasource ? ["--rpc-url", datasource] : ["--network", "mainnet"]),
     "--ci", "--no-tui", "--no-studio", "--no-deploy", "-y",

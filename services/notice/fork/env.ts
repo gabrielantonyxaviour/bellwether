@@ -15,7 +15,11 @@ export async function startOwnFork(port = NOTICE_FORK_PORT): Promise<ForkHandle>
     throw new Error(`port ${port} is already answered (${probe.kind === "surfpool" ? `Surfpool ${probe.version}` : probe.detail}); ` +
       "this check starts its own fork there and will not reuse another process's state. Stop that process (by its pid) or wait for the other run to finish.")
   }
-  const fork = await startOrReuseSurfpool({ rpcUrl, readyTimeoutMs: 90_000 })
+  // Surfpool's --network mainnet default resolves to api.mainnet-beta.solana.com. Its lazy
+  // account fetches intermittently fail while verifying fresh SAS admissions. Use the same
+  // mainnet genesis endpoint as the operator fork, while allowing an explicit override.
+  const fork = await startOrReuseSurfpool({ rpcUrl, readyTimeoutMs: 90_000,
+    datasourceRpcUrl: process.env.SURFPOOL_DATASOURCE_RPC_URL ?? "https://api.mainnet.solana.com" })
   if (fork.reused || fork.pid === null) throw new Error(`surfpool on ${rpcUrl} was not started by this check`)
   return fork
 }
