@@ -219,6 +219,36 @@
       "rejected": [
         "Off-chain session only"
       ]
+    },
+    {
+      "id": "d_env_devnet",
+      "question": "What proves the product complete",
+      "chosen": "Devnet end to end with real program, real services and real data, no mocks; mainnet deployment only for pitch credibility just before the demo",
+      "why": "Gabriel (2026-09-25): 'fully proved to be working end to end with no kind of compromise or mocking at all on devnet ... mainnet is only for the pitch credibility'",
+      "rejected": [
+        "Mainnet as the completion gate",
+        "Local fork only"
+      ]
+    },
+    {
+      "id": "d_ui_libs",
+      "question": "UI component sources",
+      "chosen": "SolanaUI for web3 components (token input, swap parts, txn toast/table, address display); ReUI for onboarding (onboarding-1) and operator pages; real web3 product patterns (Jupiter, OKX stock pages, Orca/Meteora/Raydium, Aave) for flows",
+      "why": "Gabriel's direction 2026-09-25; captures show SolanaUI is styling-only so flows are hand-built",
+      "rejected": [
+        "ReUI-only web3 screens",
+        "Jupiter Plugin (routes around the program)"
+      ]
+    },
+    {
+      "id": "d_routes",
+      "question": "Public page names",
+      "chosen": "/explorer for the trade tape, /about for product and verification info",
+      "why": "Gabriel: '/tape' should be '/explorer'; '/proof' should be an info page that explains the product",
+      "rejected": [
+        "/tape",
+        "/proof"
+      ]
     }
   ],
   "stack": [
@@ -487,11 +517,11 @@
     {
       "id": "pg_tape",
       "kind": "page",
-      "name": "Public tape (/tape)",
+      "name": "Explorer (/explorer)",
       "lane": "ui",
-      "route": "/tape",
+      "route": "/explorer",
       "routeType": "screen",
-      "contract": "Every trade in USD with symbols, price, size, UTC time, direction, pool and contract address; rolling 24-hour pair volume and end-of-day pool size; 30 days; machine-readable JSON link.",
+      "contract": "Public venue explorer: every trade in USD (symbols, price, size, UTC time, direction, pool and contract address), rolling 24-hour pair volume, end-of-day pool size, 30 days, machine-readable JSON. Satisfies the order's transaction-transparency condition.",
       "roles": [
         "public"
       ],
@@ -516,11 +546,11 @@
     {
       "id": "pg_proof",
       "kind": "page",
-      "name": "Proof and environments (/proof)",
+      "name": "About (/about)",
       "lane": "ui",
-      "route": "/proof",
+      "route": "/about",
       "routeType": "screen",
-      "contract": "Mainnet program id and accounts with explorer links, devnet endpoint, the fork scenario's recorded signatures, and the real-vs-stand-in table.",
+      "contract": "Explains the product: what Bellwether is, how a swap is checked, where it runs (devnet end to end; mainnet deployment for the pitch), program id and signatures with explorer links, real-vs-stand-in table, who can pause/upgrade/override.",
       "roles": [
         "public"
       ],
@@ -539,7 +569,7 @@
       "lane": "ui",
       "route": "/app/onboard",
       "routeType": "screen",
-      "contract": "Connect wallet, screen against OFAC SDN addresses, receive a test-admission credential, rehearsal-stock account thawed.",
+      "contract": "Onboarding built from ReUI onboarding-1 (pnpm dlx shadcn@latest add @reui/onboarding-1): connect wallet \u2192 sign a one-time challenge \u2192 OFAC screening \u2192 SAS test-admission credential and thawed BWRS account; states screening, admitted, rejected (SANCTIONED / REVOKED), retry.",
       "roles": [
         "participant"
       ],
@@ -572,7 +602,7 @@
       "lane": "ui",
       "route": "/app/trade/[symbol]",
       "routeType": "screen",
-      "contract": "Swap rehearsal stock and USDC; shows halt state with reason and latency, cap usage, activation state; on-chain rejection reasons shown plainly.",
+      "contract": "A full trading terminal in the style of OKX/Jupiter stock pages, all real data: header stats (underlying FWDI stock price and change from the keyless Nasdaq/Yahoo feeds, onchain pool price, 24h volume and liquidity from our indexer), a candlestick chart (TradingView lightweight-charts) of the real underlying stock with onchain trades overlaid, tabs Trades / Liquidity / Positions / Orders fed by the indexer and chain, right rail buy/sell panel (SolanaUI Token Input/Swap parts, own review \u2192 awaiting signature \u2192 pending \u2192 success flow), venue status (halt, heartbeat, share budget), and a Tokenized info panel (underlying ticker, shares per token, multiplier, mint). Blocked states replace the button with the program's refusal.",
       "roles": [
         "participant"
       ],
@@ -622,7 +652,7 @@
       "lane": "ui",
       "route": "/app/liquidity/[symbol]",
       "routeType": "screen",
-      "contract": "Credentialed LP adds or removes liquidity; positions are non-transferable; withdraw allowed while halted; Covered Firm disclosure shown.",
+      "contract": "Liquidity page modelled on popular Solana LP interfaces (Orca/Meteora/Raydium): pool stats, deposit/withdraw panel with ratio-locked amounts, positions table, fees; non-transferable positions; halted = withdraw only. Real devnet chain data.",
       "roles": [
         "covered_firm"
       ],
