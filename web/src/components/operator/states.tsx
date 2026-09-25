@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { capPercent } from "@/components/operator/budget"
 import { formatUnits } from "@/lib/format"
-import { explorerUrl } from "@/lib/cluster"
+import { clusterConfig, explorerUrl } from "@/lib/cluster"
 import { shortAddress } from "@/lib/wallet"
 
 export function OperatorPage({ title, lede, children }: { title: string; lede: string; children: ReactNode }) {
@@ -84,10 +84,11 @@ export function ShareGauge({ label, used, cap, decimals }: { label: string; used
   )
 }
 
-export function AddressLink({ kind, value, label }: { kind: "account" | "tx" | "token"; value: string | null; label?: string }) {
+export function AddressLink({ kind, value, label, network }: { kind: "account" | "tx" | "token"; value: string | null; label?: string; network?: "mainnet" }) {
   if (!value) return <span className="text-muted-foreground">—</span>
+  const config = clusterConfig()
   return (
-    <a className="font-mono text-xs underline" href={explorerUrl(kind, value)} target="_blank" rel="noreferrer">
+    <a className="font-mono text-xs underline" href={explorerUrl(kind, value, network === "mainnet" ? { ...config, cluster: "mainnet" } : config)} target="_blank" rel="noreferrer">
       {label ?? shortAddress(value, 4)}
     </a>
   )

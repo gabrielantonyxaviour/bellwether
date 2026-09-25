@@ -73,8 +73,9 @@ export function OperatorParticipantsPage() {
           <Button type="button" disabled={!token} onClick={() => start(lookup, "issue", setFormError, setAction)}>Review issue</Button>
           <Button type="button" variant="outline" disabled={!token} onClick={() => start(lookup, "revoke", setFormError, setAction)}>Review revoke</Button>
         </div>
-        {credential.isPending && <p role="status" className="text-sm">Reading credential…</p>}
-        {credential.isError && <ErrorBlock message={credential.error.message} />}
+        {!lookupWallet && <EmptyBlock title="No wallet selected" detail="Enter a wallet address and choose Look up to read its public credential." />}
+        {lookupWallet && credential.isPending && <p role="status" className="text-sm">Reading credential…</p>}
+        {lookupWallet && credential.isError && <ErrorBlock message={credential.error.message} onRetry={() => void credential.refetch()} />}
         {credential.data && (
           <dl className="text-sm">
             <div className="flex justify-between gap-3 border-b py-2"><dt>Status</dt><dd>{credential.data.status}</dd></div>

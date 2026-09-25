@@ -50,7 +50,7 @@ export function OperatorHaltsPage() {
             </table>
           </div>
           {halts.isPending && <LoadingBlock label="Reading the halt ledger…" />}
-          {!halts.isPending && !halts.isError && rows.length === 0 && <EmptyBlock title="No halt ledger rows" detail="The relay has not written a halt yet. A clear book is an empty ledger, not a hidden one." />}
+          {!halts.isPending && !halts.isError && rows.length === 0 && <EmptyBlock title="No halt ledger rows" detail="No halt entries are available in the current relay ledger. The on-chain row above shows the current halt state." />}
           {rows.length > 0 && (
             <div className="min-w-0 overflow-x-auto rounded-xl border">
               <table className="w-full min-w-[880px] text-left text-sm" aria-label="Latency ledger">

@@ -34,7 +34,7 @@ function Report({ report }: { report: OperatorRehearsal }) {
         </dl>
         <ul className="mt-3 space-y-2">
           {report.mint.authorityMap.map((entry) => (
-            <li key={entry.address}><AddressLink kind="account" value={entry.address} /> · {entry.roles.join(", ")} · {entry.powers.join("; ")}</li>
+            <li key={entry.address}><AddressLink kind="account" value={entry.address} network="mainnet" /> · {entry.roles.join(", ")} · {entry.powers.join("; ")}</li>
           ))}
         </ul>
         <p className="mt-2 text-xs text-muted-foreground">{report.mint.source.name} · {report.mint.source.fetchedAt}</p>
@@ -81,5 +81,5 @@ function Report({ report }: { report: OperatorRehearsal }) {
 }
 
 function Authority({ label, value }: { label: string; value: string | null }) {
-  return <div className="flex items-center justify-between gap-2 border-b py-1"><dt>{label}</dt><dd><AddressLink kind="account" value={value} /></dd></div>
+  return <div className="flex items-center justify-between gap-2 border-b py-1"><dt>{label}</dt><dd><AddressLink kind="account" value={value} network="mainnet" /></dd></div>
 }
