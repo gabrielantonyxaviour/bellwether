@@ -6,6 +6,7 @@ import {
   signTransactionMessageWithSigners, getAddressEncoder, type Address, type Instruction, type KeyPairSigner,
 } from "@solana/kit"
 import { createChain, type Chain } from "../../scripts/assets/tx"
+import { key } from "../../scripts/deploy/state"
 import { chainNow, timeTravelTo } from "../../services/notice/fork/env"
 import { API, installWallet, ISSUER, i64, PORT, RPC, rule, shortAddress, startOperatorStack, u64, walletFromSigner, WEB, type OperatorStack } from "./operator-harness"
 import { operatorSingleFlight } from "./operator-flight"
@@ -150,9 +151,14 @@ test("operator workbench on an isolated fork", async ({ browser }) => {
     await page.route("**/config.json", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
       ...devnetConfig, apiBaseUrl: "https://bellwether-api.larinova.com", credentialApiUrl: "https://bellwether-api.larinova.com", rpcUrl: "https://bellwether-api.larinova.com/rpc",
     }) }))
-    await page.goto(`${WEB}/operator/symbols`)
-    await expect(page.getByRole("heading", { name: "BWRS" })).toBeVisible({ timeout: 30_000 })
-    const devnetAccounts = await page.locator('main a[href^="https://solscan.io/account/"]').evaluateAll((links) => links.map((link) => (link as HTMLAnchorElement).href))
+      await page.goto(`${WEB}/operator/participants`)
+      await page.getByLabel("Participant wallet").fill((await key("devnet", "public-smoke-trader")).address)
+      await page.getByRole("button", { name: "Look up" }).click()
+      await expect(page.locator('main a[href^="https://solscan.io/account/"]').first()).toBeVisible({ timeout: 30_000 })
+    await page.goto(`${WEB}/operator/public-notice`)
+    const devnetAuthorities = page.getByRole("region", { name: "Chain-read authorities" })
+    await expect(devnetAuthorities).toBeVisible({ timeout: 90_000 })
+    const devnetAccounts = await devnetAuthorities.locator('a[href^="https://solscan.io/account/"]').evaluateAll((links) => links.map((link) => (link as HTMLAnchorElement).href))
     expect(devnetAccounts.length).toBeGreaterThan(0)
     expect(devnetAccounts.every((href) => new URL(href).searchParams.get("cluster") === "devnet"), devnetAccounts.join(" | ")).toBe(true)
     complete = true
