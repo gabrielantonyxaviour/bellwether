@@ -1,0 +1,90 @@
+{
+  "venue": {
+    "name": "Bellwether",
+    "legalEntity": null,
+    "contactEmail": null,
+    "contactPhone": null,
+    "noticeUrl": null
+  },
+  "deployments": {
+    "fork": { "programId": null, "venue": null },
+    "devnet": { "programId": null, "venue": null },
+    "mainnet": { "programId": null, "venue": null }
+  },
+  "structure": "Bellwether operates permissioned constant-product liquidity pools that trade Tokenized NMS Stock against USDC on Solana. The venue's rulebook (participant credential, exchange-synced halts, share-volume caps, symbol caps and issuer-notice activation) is enforced inside the venue program's own instructions, so a participant who calls the program directly faces the same rules as one who uses Bellwether's web app.",
+  "affiliates": {
+    "affiliatedTsvs": [],
+    "tradingByTsvOrAffiliates": false,
+    "statement": "Neither Bellwether nor any of its affiliates displays or enters trading interest on the venue, directly or indirectly, as a user or as a liquidity provider."
+  },
+  "lpGovernance": "There is no LP token. Liquidity positions are internal, non-transferable records kept by the venue program for each credentialed wallet, and they carry no governance rights.",
+  "participants": {
+    "eligible": [
+      "retail investors trading for their own account from an admitted wallet",
+      "institutional investors trading for their own account from an admitted wallet",
+      "liquidity providers, who must hold the same admission credential as traders"
+    ],
+    "brokerDealerAccess": "Bellwether has no broker-dealer access arrangement: no person accesses the venue by way of a broker-dealer."
+  },
+  "access": {
+    "criteria": "A wallet may trade or provide liquidity only while it holds a current Bellwether admission credential: an attestation issued by the venue's credential issuer under the venue's Solana Attestation Service credential and schema, or, where the membership gate is enabled, a membership record written by the same issuer. Every credential carries an expiry; an attestation that never expires is refused.",
+    "procedure": "The credential issuer screens the applicant wallet address, then writes the attestation on-chain. The venue program checks the credential on every swap and deposit.",
+    "sanctions": "Admission screens the wallet address against the digital-currency addresses on OFAC's Specially Designated Nationals list; a listed address is refused.",
+    "denial": "The credential issuer can revoke a credential at any time by closing it; an expired or revoked credential is refused by the program on the next swap or deposit.",
+    "identityVerification": null
+  },
+  "treatment": "Bellwether applies the same access criteria, trading procedures, market data and fees to every admitted participant. The program has no participant tiers, fee discounts, priority access or privileged order types, and none of the venue's own keys (admin, relay, data authority, credential issuer) can trade on a participant's behalf: every swap needs the trader's own signature.",
+  "entry": {
+    "procedure": "A participant signs a swap transaction that names the direction (buy the stock with USDC, or sell the stock for USDC), the exact input amount and the minimum output they will accept (their slippage tolerance). The program executes the whole swap against the pool at the constant-product price or rejects the whole transaction; there are no resting orders.",
+    "checks": "Checks run in this order: participant credential; halt state and freshness of the halt data; activation and any breach pause; the symbol's daily share budget; then the minimum output.",
+    "confirmation": "A swap settles in the same Solana transaction that executes it and is final once the transaction is confirmed.",
+    "sizeLimits": "There is no minimum beyond one base unit of the input token. The maximum is bounded by the symbol's remaining daily share budget and by pool reserves.",
+    "messages": "A rejected swap returns a named program error to the wallet: NotAdmitted, TradingHalted, HaltDataStale, NotActive, Paused, CapReached or SlippageExceeded."
+  },
+  "offchain": "Execution and settlement are entirely on-chain. Off-chain services support trading without taking part in execution: the halt relay reads the Nasdaq Trader trade-halt feed once a minute and writes halts, resumptions and heartbeats on-chain; the caps job computes each symbol's daily share budget from prior-month consolidated daily share volume and writes it on-chain; the credential issuer screens and admits wallets; and the tape indexer publishes each executed trade. Participants use these only indirectly, by requesting admission and reading the public tape.",
+  "hours": {
+    "twentyFourSeven": true,
+    "statement": "Trading is available 24 hours a day, 7 days a week, including when the underlying stock's listing market is closed, except while a symbol is halted, paused after a volume-threshold breach, at its daily share budget, or not yet activated."
+  },
+  "quoteAsset": {
+    "symbol": "USDC",
+    "name": "USD Coin",
+    "kind": "non-security crypto asset (a USD payment stablecoin issued by Circle)",
+    "usdValuation": "For USD-denominated records and the public tape, one USDC is valued at $1.00."
+  },
+  "marketData": [
+    { "provider": "Nasdaq Trader (Nasdaq, Inc.)", "source": "Trade-halt RSS feed", "use": "Halts and resumptions of the underlying stock, polled once a minute and written on-chain by the relay; halt data older than the heartbeat limit stops trading (fails closed)." },
+    { "provider": "Nasdaq.com and Yahoo Finance", "source": "Historical daily consolidated share volume", "use": "Prior-month average daily share volume for each symbol's daily share budget; the two sources are cross-checked and a disagreement over 1% is flagged." }
+  ],
+  "oracles": "Bellwether uses no price oracle: a pool's price comes only from its own reserves.",
+  "display": "Bellwether does not display trading interest: pools have no order book, and each pool's reserves are public on-chain state that anyone can read. Every executed swap emits an on-chain trade event, and Bellwether publishes each trade on its free, machine-readable public tape in U.S. dollars within 10 minutes, with 30 days of history: price, size, time, direction, pool and program.",
+  "fees": "The only fee is each pool's swap fee, charged on the swap's input at the rate below and kept in the pool's reserves, so it accrues to liquidity providers in proportion to their positions. Bellwether charges no access, admission, listing or market-data fees, pays no rebates and negotiates no fees. Solana network fees are paid by the transaction signer to the network.",
+  "stoppage": {
+    "circumstances": "Bellwether stops trading in a symbol when: the underlying stock is halted or suspended on its listing market (including limit up-limit down pauses, market-wide circuit breakers, news pending and SEC or delisting suspensions) as published in the Nasdaq Trader trade-halt feed; the halt data is older than the heartbeat limit; the symbol reaches its daily share budget, which stops trading before the volume threshold is exceeded; a second volume-threshold breach is recorded, which pauses the symbol for three months; or the issuer has objected.",
+    "controls": "There are no reference price bands: the constant-product curve moves price only with trades, and every swap carries the trader's minimum output.",
+    "resumption": "Trading resumes when the relay records the resumption from the feed with a fresh heartbeat; a budget stop lifts at the start of the next trade date; a breach pause lifts when it expires.",
+    "corporateActions": null
+  },
+  "technology": {
+    "ledger": "Solana mainnet-beta. Transactions are authorized with Ed25519 signatures and ordered and confirmed by Solana's validators (Proof of History with Tower BFT consensus).",
+    "interfaces": [
+      { "name": "Bellwether web app", "role": "user interface for admission, trading, the public tape and the operator workbench", "providedBy": "the TSV" },
+      { "name": "Halt relay", "role": "relayer that writes halts, resumptions and heartbeats on-chain", "providedBy": "the TSV" },
+      { "name": "Solana wallets (via the wallet standard)", "role": "participant key custody and transaction signing", "providedBy": "third parties" },
+      { "name": "Solana RPC providers", "role": "transaction submission and chain reads", "providedBy": "third parties" }
+    ],
+    "aggregators": "Bellwether is not integrated with aggregators or solvers.",
+    "interoperability": "Pools hold standard SPL Token and Token-2022 accounts, and the venue program can be called by any Solana client.",
+    "directAccess": "Participants may build custom integrations or call the venue program directly; the program enforces every rule whatever interface submits the transaction."
+  },
+  "listings": [
+    {
+      "symbol": "FWDI",
+      "mint": "7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9",
+      "issuer": "Forward Industries, Inc.",
+      "tokenizer": "Superstate (transfer agent)",
+      "issuerSponsored": true,
+      "note": "Tokenized on behalf of the issuer, so no Issuer Notice is required (ORDER §II.D)."
+    }
+  ]
+}
