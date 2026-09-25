@@ -36,3 +36,8 @@ Everything on Cloudflare (account 893c47cc…, vault CLOUDFLARE_API_TOKEN: Worke
 - Services (relay cron each minute, caps daily cron, indexer + API with a SQLite-backed Durable Object, credential
   service): Cloudflare Workers at **api.bellwether.larinova.com**. Keep services runnable on Node too (dev/fork).
 - Nothing is deployed until devnet is green end to end; the web-deploy task will be assigned then.
+
+## Gabriel's gates (2026-09-25)
+- Mainnet deploy ONLY after every app flow and demo flow is validated end to end on devnet.
+- Demo voice-over: Gabriel records his own voice.
+- Public GitHub repo gabrielantonyxaviour/bellwether is approved; push only after a secrets audit.
