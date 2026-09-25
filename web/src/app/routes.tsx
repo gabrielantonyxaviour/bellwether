@@ -3,7 +3,8 @@
  *   src/routes/public   (blk_ui_public)       HomePage, TapePage, ProofPage
  *   src/routes/app      (blk_ui_participant)  OnboardPage, TradePage, LiquidityPage
  *   src/routes/operator (blk_ui_operator)     Operator*Page ×6
- * A screen builder replaces its folder's index.tsx exports; this file does not change.
+ * A screen builder replaces its folder's index.tsx exports.
+ * /explorer and /about are the public routes; /tape and /proof redirect there.
  */
 import { createBrowserRouter, Navigate, type RouteObject } from "react-router"
 import { AppLayout } from "@/app/layouts/app-layout"
@@ -38,8 +39,10 @@ export const routes: RouteObject[] = [
     errorElement: <RouteError />,
     children: [
       { path: "/", lazy: publicScreen("HomePage") },
-      { path: "/tape", lazy: publicScreen("TapePage") },
-      { path: "/proof", lazy: publicScreen("ProofPage") },
+      { path: "/explorer", lazy: publicScreen("TapePage") },
+      { path: "/about", lazy: publicScreen("ProofPage") },
+      { path: "/tape", element: <Navigate replace to="/explorer" /> },
+      { path: "/proof", element: <Navigate replace to="/about" /> },
       { path: "/app", element: <Navigate replace to="/app/onboard" /> },
       { path: "/app/onboard", lazy: appScreen("OnboardPage") },
       { path: "/app/trade", element: <DefaultSymbolRedirect to="trade" /> },

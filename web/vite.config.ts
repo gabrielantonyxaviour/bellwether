@@ -22,7 +22,11 @@ export default defineConfig({
       },
     },
   },
-  server: { port: 5190, strictPort: false },
+  server: {
+    port: 5190,
+    strictPort: false,
+    fs: { allow: [fileURLToPath(new URL(".", import.meta.url)), fileURLToPath(new URL("..", import.meta.url))] },
+  },
   preview: { port: 5191 },
   test: {
     environment: "node",

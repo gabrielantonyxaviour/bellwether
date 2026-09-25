@@ -1,8 +1,11 @@
 /** Every route in the app. Link with these builders instead of string literals. */
 export const paths = {
   home: "/",
-  tape: "/tape",
-  proof: "/proof",
+  explorer: "/explorer",
+  about: "/about",
+  /** Previous names. Same destinations, so in-flight links keep resolving. */
+  tape: "/explorer",
+  proof: "/about",
   onboard: "/app/onboard",
   trade: (symbol: string) => `/app/trade/${encodeURIComponent(symbol)}`,
   liquidity: (symbol: string) => `/app/liquidity/${encodeURIComponent(symbol)}`,
@@ -19,8 +22,8 @@ export const paths = {
 /** Surface ids from spec.json, keyed by route pattern. */
 export const SURFACES = {
   "/": "pg_home",
-  "/tape": "pg_tape",
-  "/proof": "pg_proof",
+  "/explorer": "pg_tape",
+  "/about": "pg_proof",
   "/app/onboard": "pg_onboard",
   "/app/trade/:symbol": "pg_trade",
   "/app/liquidity/:symbol": "pg_liquidity",

@@ -1,4 +1,4 @@
-/** Public + participant shell: header with nav (Trade, Liquidity, Tape, Proof) and the wallet and credential slots. */
+/** Public + participant shell: header with nav (Trade, Liquidity, Explorer, About) and the wallet and credential slots. */
 import type { ReactNode } from "react"
 import { NavLink, Outlet } from "react-router"
 import { CredentialBadge } from "@/app/credential-badge"
@@ -23,8 +23,8 @@ export function AppLayout({ walletSlot, credentialSlot }: { walletSlot?: ReactNo
           <nav className="order-last -mx-2 flex w-full items-center gap-1 overflow-x-auto pb-2 sm:order-none sm:mx-0 sm:ml-2 sm:w-auto sm:pb-0" aria-label="Main">
             <NavLink to={paths.trade(defaultSymbol)} className={navClass}>Trade</NavLink>
             <NavLink to={paths.liquidity(defaultSymbol)} className={navClass}>Liquidity</NavLink>
-            <NavLink to={paths.tape} className={navClass}>Tape</NavLink>
-            <NavLink to={paths.proof} className={navClass}>Proof</NavLink>
+            <NavLink to={paths.explorer} className={navClass}>Explorer</NavLink>
+            <NavLink to={paths.about} className={navClass}>About</NavLink>
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-2">
             <div className="hidden sm:block">{credentialSlot ?? <CredentialBadge />}</div>
@@ -32,7 +32,7 @@ export function AppLayout({ walletSlot, credentialSlot }: { walletSlot?: ReactNo
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-7xl flex-1">
+      <main className="mx-auto w-full min-w-0 max-w-7xl flex-1">
         <Outlet />
       </main>
     </div>
