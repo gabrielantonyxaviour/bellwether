@@ -16,7 +16,7 @@ Draft checklist. A checked box needs a saved URL, command output, or on-screen c
 - [ ] Run a secrets audit on the exact tracked files and commit history intended for GitHub. Review keypair paths, `.env` files, deployment journals, logs and media metadata. Confirm no private key or operator token is exposed.
 - [ ] Add a root MIT `LICENSE` if that is the intended license; verify the public README reflects the actual terms.
 - [ ] Make <https://github.com/gabrielantonyxaviour/bellwether> public after the audit; open it without a signed-in session and check source, README and relevant proof links.
-- [x] Deploy Cloudflare Pages at <https://bellwether.larinova.com> and the named tunnel at <https://bellwether-api.larinova.com>; verify HTTPS, public devnet `config.json`, credential health and `/tape` read-back.
+- [x] Deploy Cloudflare Pages at <https://bellwether.larinova.com> and the named tunnel at <https://bellwether-api.larinova.com>; verify HTTPS, public devnet `config.json`, [API health](https://bellwether-api.larinova.com/health) and `/tape` read-back. The deployed web serves `/`, `/explorer`, `/about` and `/app/*` on devnet; the dated explorer shows the finalized fresh-wallet swap. See `checks/public-url.ts` and commit `007800a`.
 - [ ] Verify the deployed browser wallet and operator journeys from a fresh session against the public services before portal submission.
 - [ ] Upload the ≤3:00 video with Gabriel's voice. Open the public video URL anonymously; check audio, labels and end card.
 

@@ -2,9 +2,11 @@
 
 Bellwether is a Solana venue-program prototype and operator workbench for the SEC's [Tokenized Securities Venue Innovation Exemption (Release 34-106402)](https://www.sec.gov/files/rules/exorders/2026/34-106402.pdf). It demonstrates permissioned rehearsal-stock swaps, exchange-halt and stale-feed stops, share budgets, listing clocks, and a public trade tape.
 
-**Status:** A fresh wallet signed admission, received devnet fee SOL and test USDC, swapped BWRS, and saw its finalized print on the [public explorer](https://bellwether.larinova.com/explorer?date=2026-09-25). The web is hosted at <https://bellwether.larinova.com>; the [public API](https://bellwether-api.larinova.com/tape?date=2026-09-25) serves the same tape. A local Surfpool mainnet fork exercised the program against the real FWDI mint. Mainnet trading is unverified. Bellwether is not an operating securities venue.
+**Status:** Cloudflare Pages serves the devnet app at <https://bellwether.larinova.com> (`/`, `/explorer`, `/about`, `/app/*`). The API and test-admission service use <https://bellwether-api.larinova.com>. A fresh wallet signed admission, received devnet fee SOL and test USDC, swapped BWRS, and saw its finalized print on the [public explorer](https://bellwether.larinova.com/explorer?date=2026-09-25) and [API tape](https://bellwether-api.larinova.com/tape?date=2026-09-25). A local Surfpool mainnet fork exercised the program against the real FWDI mint. Mainnet trading has not been deployed. Bellwether is not an operating securities venue.
 
 ## Quick start
+
+To inspect the public devnet build, open the [home page](https://bellwether.larinova.com), [dated trade explorer](https://bellwether.larinova.com/explorer?date=2026-09-25), [environment details](https://bellwether.larinova.com/about), or [API health](https://bellwether-api.larinova.com/health). The hosted browser wallet journey still needs final end-to-end recording.
 
 From a clone with Node.js ≥22, pnpm, Rust/Solana SBF tools and Surfpool installed:
 

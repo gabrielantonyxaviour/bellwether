@@ -12,7 +12,7 @@ Use the text between the `BEGIN` and `END` markers for each character-limited fi
 Bellwether is a Solana pool program and operator workbench for permissioned tokenized-stock trading. Its swap path checks admission, exchange halts, data freshness, share caps, and listing status; a public tape makes trades auditable.
 <!-- SHORT END -->
 
-**Full Description** — count: **3,125** / 5,000 characters
+**Full Description** — count: **3,559** / 5,000 characters
 
 <!-- FULL BEGIN -->
 ## The problem
@@ -33,7 +33,7 @@ The venue needs a public, auditable program with atomic checks at settlement. So
 
 ## Where it runs and what is real
 
-**Devnet:** the program, a clearly labelled Bellwether rehearsal stock (BWRS), test USDC, credential issuer, relay, API, indexer and tape completed an end-to-end admitted swap. The transaction finalized and appeared in the API tape. **Local mainnet fork:** the program passed tests against the real FWDI mint; fork cheatcodes stood in for its transfer agent's thaw and token funding. These are local and devnet proofs, not mainnet trading.
+**Public devnet:** the web app runs at [bellwether.larinova.com](https://bellwether.larinova.com), with `/`, `/explorer`, `/about` and `/app/*` served by Cloudflare Pages. The API and test-admission service are at [bellwether-api.larinova.com](https://bellwether-api.larinova.com). A fresh wallet signed admission, received devnet fee SOL and test USDC, swapped the labelled Bellwether rehearsal stock (BWRS), and the finalized transaction appeared on the [public explorer](https://bellwether.larinova.com/explorer?date=2026-09-25) and [API tape](https://bellwether-api.larinova.com/tape?date=2026-09-25). The browser wallet journey still needs final recording. **Local mainnet fork:** the program passed tests against the real FWDI mint; fork cheatcodes stood in for its transfer agent's thaw and token funding. These are devnet and local-fork proofs, not mainnet trading.
 
 **Mainnet pitch proof — [ADD ONLY AFTER DEPLOYMENT]:** program ID, BWRS/USDC pool, transaction signatures, public tape URL, and measured halt latency. Remove this paragraph if mainnet is not deployed and verified.
 
@@ -49,7 +49,7 @@ Only Step 1's fields have been observed. Map these values to the actual fields b
 | Track | Stocklana **main track only**. No sponsor tracks. Confirm portal selector. |
 | Tech stack | Rust + Pinocchio venue program; Token-2022 and Solana Attestation Service; TypeScript relay, caps job, credential issuer, indexer and API; React + Vite web app; Surfpool mainnet fork. The web is deployed on Cloudflare Pages; signing services run on a Mac through a named Cloudflare tunnel. |
 | GitHub | <https://github.com/gabrielantonyxaviour/bellwether> — approved target; verify public access and secrets audit before adding. |
-| Live app | <https://bellwether.larinova.com> — HTTPS and devnet config verified. Public explorer: <https://bellwether.larinova.com/explorer?date=2026-09-25>. API tape: <https://bellwether-api.larinova.com/tape?date=2026-09-25>. Complete the browser wallet journey before portal submission. |
+| Live app | <https://bellwether.larinova.com> — Pages serves `/`, `/explorer`, `/about` and `/app/*` on devnet. API and admission host: <https://bellwether-api.larinova.com>. Public proof: [explorer](https://bellwether.larinova.com/explorer?date=2026-09-25) and [API tape](https://bellwether-api.larinova.com/tape?date=2026-09-25). Complete the browser wallet journey before portal submission. |
 | Demo video | **[ADD PUBLIC VIDEO URL AFTER UPLOAD]**; ≤3:00, Gabriel's voice. |
 | Team | Gabriel Antony Xaviour; confirm account name and any invited teammates in the portal. |
 | Sponsor tracks | None. |
