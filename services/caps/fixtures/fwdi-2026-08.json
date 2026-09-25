@@ -1,0 +1,467 @@
+{
+ "description": "Real FWDI daily bars for August 2026, recorded from the two keyless APIs the caps job reads. The accept check (checks/caps-data.ts) replays these responses so its ADV and cap are deterministic.",
+ "recordedAt": "2026-09-25T09:14:54Z",
+ "symbol": "FWDI",
+ "month": "2026-08",
+ "responses": {
+  "nasdaq": {
+   "url": "https://api.nasdaq.com/api/quote/FWDI/historical?assetclass=stocks&fromdate=2026-08-01&todate=2026-08-31&limit=40",
+   "status": 200,
+   "contentType": "application/json; charset=utf-8",
+   "requestHeaders": {
+    "User-Agent": "Mozilla/5.0",
+    "Accept": "application/json"
+   },
+   "body": {
+    "data": {
+     "symbol": "FWDI",
+     "totalRecords": 21,
+     "tradesTable": {
+      "asOf": null,
+      "headers": {
+       "date": "Date",
+       "close": "Close/Last",
+       "volume": "Volume",
+       "open": "Open",
+       "high": "High",
+       "low": "Low"
+      },
+      "rows": [
+       {
+        "date": "08/31/2026",
+        "close": "$6.34",
+        "volume": "2,216,729",
+        "open": "$5.95",
+        "high": "$6.415",
+        "low": "$5.83"
+       },
+       {
+        "date": "08/28/2026",
+        "close": "$5.89",
+        "volume": "4,142,047",
+        "open": "$6.73",
+        "high": "$6.73",
+        "low": "$5.87"
+       },
+       {
+        "date": "08/27/2026",
+        "close": "$6.66",
+        "volume": "3,831,810",
+        "open": "$6.39",
+        "high": "$7.00",
+        "low": "$6.38"
+       },
+       {
+        "date": "08/26/2026",
+        "close": "$5.93",
+        "volume": "1,514,384",
+        "open": "$5.97",
+        "high": "$6.08",
+        "low": "$5.79"
+       },
+       {
+        "date": "08/25/2026",
+        "close": "$6.05",
+        "volume": "2,817,782",
+        "open": "$5.71",
+        "high": "$6.30",
+        "low": "$5.59"
+       },
+       {
+        "date": "08/24/2026",
+        "close": "$5.73",
+        "volume": "4,741,005",
+        "open": "$5.55",
+        "high": "$5.955",
+        "low": "$5.41"
+       },
+       {
+        "date": "08/21/2026",
+        "close": "$5.14",
+        "volume": "1,993,017",
+        "open": "$5.26",
+        "high": "$5.50",
+        "low": "$5.09"
+       },
+       {
+        "date": "08/20/2026",
+        "close": "$5.02",
+        "volume": "1,444,952",
+        "open": "$5.25",
+        "high": "$5.35",
+        "low": "$4.885"
+       },
+       {
+        "date": "08/19/2026",
+        "close": "$4.94",
+        "volume": "1,625,330",
+        "open": "$4.59",
+        "high": "$5.105",
+        "low": "$4.55"
+       },
+       {
+        "date": "08/18/2026",
+        "close": "$4.54",
+        "volume": "1,273,085",
+        "open": "$4.24",
+        "high": "$4.55",
+        "low": "$4.225"
+       },
+       {
+        "date": "08/17/2026",
+        "close": "$4.28",
+        "volume": "1,071,067",
+        "open": "$4.25",
+        "high": "$4.33",
+        "low": "$4.12"
+       },
+       {
+        "date": "08/14/2026",
+        "close": "$4.26",
+        "volume": "1,448,985",
+        "open": "$4.09",
+        "high": "$4.275",
+        "low": "$3.92"
+       },
+       {
+        "date": "08/13/2026",
+        "close": "$4.14",
+        "volume": "1,185,637",
+        "open": "$4.22",
+        "high": "$4.39",
+        "low": "$4.02"
+       },
+       {
+        "date": "08/12/2026",
+        "close": "$4.40",
+        "volume": "1,038,611",
+        "open": "$4.34",
+        "high": "$4.505",
+        "low": "$4.31"
+       },
+       {
+        "date": "08/11/2026",
+        "close": "$4.28",
+        "volume": "699,472",
+        "open": "$4.30",
+        "high": "$4.3499",
+        "low": "$4.21"
+       },
+       {
+        "date": "08/10/2026",
+        "close": "$4.24",
+        "volume": "743,022",
+        "open": "$4.38",
+        "high": "$4.40",
+        "low": "$4.18"
+       },
+       {
+        "date": "08/07/2026",
+        "close": "$4.33",
+        "volume": "521,795",
+        "open": "$4.29",
+        "high": "$4.369",
+        "low": "$4.175"
+       },
+       {
+        "date": "08/06/2026",
+        "close": "$4.16",
+        "volume": "459,432",
+        "open": "$4.20",
+        "high": "$4.3101",
+        "low": "$4.13"
+       },
+       {
+        "date": "08/05/2026",
+        "close": "$4.23",
+        "volume": "533,001",
+        "open": "$4.20",
+        "high": "$4.315",
+        "low": "$4.0791"
+       },
+       {
+        "date": "08/04/2026",
+        "close": "$4.22",
+        "volume": "931,995",
+        "open": "$4.15",
+        "high": "$4.25",
+        "low": "$4.10"
+       },
+       {
+        "date": "08/03/2026",
+        "close": "$4.07",
+        "volume": "803,595",
+        "open": "$4.05",
+        "high": "$4.10",
+        "low": "$3.85"
+       }
+      ]
+     }
+    },
+    "message": null,
+    "status": {
+     "rCode": 200,
+     "bCodeMessage": null,
+     "developerMessage": null
+    }
+   }
+  },
+  "yahoo": {
+   "url": "https://query1.finance.yahoo.com/v8/finance/chart/FWDI?period1=1785542400&period2=1788220800&interval=1d",
+   "status": 200,
+   "contentType": "application/json;charset=utf-8",
+   "requestHeaders": {
+    "User-Agent": "Mozilla/5.0",
+    "Accept": "application/json"
+   },
+   "body": {
+    "chart": {
+     "result": [
+      {
+       "meta": {
+        "currency": "USD",
+        "symbol": "FWDI",
+        "exchangeName": "NCM",
+        "fullExchangeName": "NasdaqCM",
+        "instrumentType": "EQUITY",
+        "firstTradeDate": 785082600,
+        "regularMarketTime": 1790280000,
+        "hasPrePostMarketData": true,
+        "gmtoffset": -14400,
+        "timezone": "EDT",
+        "exchangeTimezoneName": "America/New_York",
+        "regularMarketPrice": 8.35,
+        "regularMarketChangePercent": 3.598,
+        "fulldayPrice": 8.442,
+        "fulldayChange": 0.06,
+        "fulldayChangePercent": 0.719,
+        "fiftyTwoWeekHigh": 30.75,
+        "fiftyTwoWeekLow": 3.48,
+        "regularMarketDayHigh": 8.37,
+        "regularMarketDayLow": 7.91,
+        "regularMarketVolume": 1701847,
+        "longName": "Forward Industries, Inc.",
+        "shortName": "Forward Industries, Inc.",
+        "chartPreviousClose": 4.03,
+        "priceHint": 2,
+        "currentTradingPeriod": {
+         "pre": {
+          "timezone": "EDT",
+          "start": 1790323200,
+          "end": 1790343000,
+          "gmtoffset": -14400
+         },
+         "regular": {
+          "timezone": "EDT",
+          "start": 1790343000,
+          "end": 1790366400,
+          "gmtoffset": -14400
+         },
+         "post": {
+          "timezone": "EDT",
+          "start": 1790366400,
+          "end": 1790380800,
+          "gmtoffset": -14400
+         }
+        },
+        "dataGranularity": "1d",
+        "range": "",
+        "validRanges": [
+         "1d",
+         "5d",
+         "1mo",
+         "3mo",
+         "6mo",
+         "1y",
+         "2y",
+         "5y",
+         "10y",
+         "ytd",
+         "max"
+        ]
+       },
+       "timestamp": [
+        1785763800,
+        1785850200,
+        1785936600,
+        1786023000,
+        1786109400,
+        1786368600,
+        1786455000,
+        1786541400,
+        1786627800,
+        1786714200,
+        1786973400,
+        1787059800,
+        1787146200,
+        1787232600,
+        1787319000,
+        1787578200,
+        1787664600,
+        1787751000,
+        1787837400,
+        1787923800,
+        1788183000
+       ],
+       "indicators": {
+        "quote": [
+         {
+          "open": [
+           4.050000190734863,
+           4.150000095367432,
+           4.199999809265137,
+           4.199999809265137,
+           4.289999961853027,
+           4.380000114440918,
+           4.300000190734863,
+           4.340000152587891,
+           4.21999979019165,
+           4.090000152587891,
+           4.25,
+           4.239999771118164,
+           4.590000152587891,
+           5.25,
+           5.260000228881836,
+           5.550000190734863,
+           5.710000038146973,
+           5.96999979019165,
+           6.389999866485596,
+           6.730000019073486,
+           5.949999809265137
+          ],
+          "low": [
+           3.8499999046325684,
+           4.099999904632568,
+           4.079999923706055,
+           4.130000114440918,
+           4.179999828338623,
+           4.179999828338623,
+           4.210000038146973,
+           4.309999942779541,
+           4.019999980926514,
+           3.9200000762939453,
+           4.119999885559082,
+           4.230000019073486,
+           4.550000190734863,
+           4.889999866485596,
+           5.090000152587891,
+           5.409999847412109,
+           5.590000152587891,
+           5.789999961853027,
+           6.380000114440918,
+           5.869999885559082,
+           5.829999923706055
+          ],
+          "volume": [
+           803500,
+           932000,
+           533000,
+           459200,
+           521800,
+           743000,
+           699500,
+           1038600,
+           1185600,
+           1448900,
+           1071100,
+           1273100,
+           1625300,
+           1445000,
+           1993000,
+           4741000,
+           2817800,
+           1514400,
+           3822800,
+           4142000,
+           2216700
+          ],
+          "high": [
+           4.099999904632568,
+           4.25,
+           4.320000171661377,
+           4.309999942779541,
+           4.369999885559082,
+           4.400000095367432,
+           4.349999904632568,
+           4.510000228881836,
+           4.389999866485596,
+           4.28000020980835,
+           4.329999923706055,
+           4.550000190734863,
+           5.110000133514404,
+           5.349999904632568,
+           5.5,
+           5.960000038146973,
+           6.300000190734863,
+           6.079999923706055,
+           7.0,
+           6.730000019073486,
+           6.420000076293945
+          ],
+          "close": [
+           4.070000171661377,
+           4.21999979019165,
+           4.230000019073486,
+           4.159999847412109,
+           4.329999923706055,
+           4.239999771118164,
+           4.28000020980835,
+           4.400000095367432,
+           4.139999866485596,
+           4.260000228881836,
+           4.28000020980835,
+           4.539999961853027,
+           4.940000057220459,
+           5.019999980926514,
+           5.139999866485596,
+           5.730000019073486,
+           6.050000190734863,
+           5.929999828338623,
+           6.659999847412109,
+           5.889999866485596,
+           6.340000152587891
+          ]
+         }
+        ],
+        "adjclose": [
+         {
+          "adjclose": [
+           4.070000171661377,
+           4.21999979019165,
+           4.230000019073486,
+           4.159999847412109,
+           4.329999923706055,
+           4.239999771118164,
+           4.28000020980835,
+           4.400000095367432,
+           4.139999866485596,
+           4.260000228881836,
+           4.28000020980835,
+           4.539999961853027,
+           4.940000057220459,
+           5.019999980926514,
+           5.139999866485596,
+           5.730000019073486,
+           6.050000190734863,
+           5.929999828338623,
+           6.659999847412109,
+           5.889999866485596,
+           6.340000152587891
+          ]
+         }
+        ]
+       }
+      }
+     ],
+     "error": null
+    }
+   }
+  },
+  "ishares": {
+   "note": "On 2026-09-25 both iShares holdings URLs (IVV and IWB, fileType=csv) answered HTTP 200 with content-type text/csv but a 2.25 MB HTML product page as the body, with or without cookies, Referer or full browser headers. Only the first bytes are kept; the check replays them for both funds.",
+   "status": 200,
+   "contentType": "text/csv;charset=UTF-8",
+   "bodyPrefix": "<!DOCTYPE html>\n<html xmlns=\"http://www.w3.org/1999/xhtml\" prefix=\"og: http://ogp.me/ns#\" lang=\"en-US\" xml:lang=\"en-US\">\n<head>\n<link rel=\"preload\" href=\"/blk-one02-c-assets/include/bundles/minified-dbef7c11ac684591907648438985ea14.css\" as=\"style\" />\n<link rel=\"preload\" href=\"/blk-one02-c-assets/include/bundles/minified-99143fd66f7d0e9a9660b3cba2550cb8.css\" as=\"style\" />\n<link rel=\"preload\" href=\""
+  }
+ }
+}
