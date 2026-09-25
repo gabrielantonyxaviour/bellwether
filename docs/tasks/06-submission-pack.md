@@ -20,3 +20,16 @@ Write:
   mainnet deploy, film upload link, portal fields, final Submit click is Gabriel's).
 Facts must match the sources; mark anything unverified. Commit docs/submission/** by explicit path (message ends with
 `Claude-Session: https://claude.ai/code/session_01Exky7bB9jAqDLuyJNJR2XA`) and report to stock-claude per docs/tasks/README.md.
+
+## Worker report — bw-submission, 2026-09-25
+
+Prepared `docs/submission/portal-answers.md`, `README-public.md`, `demo-script.md` and `checklist.md`.
+The portal copy is within the known Step 1 limits (234/280 and 3,125/5,000 characters).
+The pack separates finalized devnet and local fork evidence from mainnet and public-hosting
+placeholders, labels test admission and BWRS accurately, and leaves unknown portal Steps 2–5 for
+live confirmation. The public README draft marks MIT as intended because no root `LICENSE` exists.
+
+Checks: character counts passed; `git diff --check` passed; all four docs are under 300 lines.
+No Abel block maps to this writing task, so there is no harness verify verdict. Coordinator/Gabriel
+must confirm portal fields and deadline, complete UI/demo and public deployment gates, decide the
+mainnet pitch path, add a license, and make the final Submit click.

@@ -1,0 +1,23 @@
+# Bellwether demo — 3:00 shot plan
+
+Gabriel records the voice. These are speaking beats, not lines to read. The source sequence is `FLOWS-AND-DEMO.md` §6; record the strongest verified environment for each shot and label it on screen. Record at 1440 px, with the transaction and error text legible in the final export. Keep the finished film at or under 3:00.
+
+| Time | Shot and exact state to capture | Chain / visible proof | Gabriel's talking beat |
+| --- | --- | --- | --- |
+| 0:00–0:15 | Title with Bellwether, SEC order headline and the Solana Policy Institute line. | Show [Release 34-106402](https://www.sec.gov/files/rules/exorders/2026/34-106402.pdf) identifier and source credit for the [Solana post](https://solana.com/news/stocks-sec-innovation-exemption). | A conditional new path for tokenized US stocks needs venue controls. |
+| 0:15–0:35 | Five rules: admitted wallets, listing-exchange halts, share caps, public tape, 30-day notice. | Rule labels cite the SEC order; do not imply the prototype satisfies every operator duty. | What a real operator must coordinate, and why program checks matter. |
+| 0:35–1:10 | `/app/onboard`: connect, sign admission challenge, see test credential. `/app/trade/BWRS`: review quote, wallet signature, pending, success. `/explorer`: find the same trade. | Prefer **verified mainnet** only if deployed; otherwise label **devnet**. Show credential attestation, cluster, program ID, transaction signature and matching tape row. The existing devnet example is `3opPy…tCC7P`; record a fresh UI flow only after it works. | One admitted wallet completes a rehearsal-stock swap; the same signature becomes a public print. |
+| 1:10–1:20 | Ineligible wallet submits the same swap and sees `NotAdmitted`. | Show program simulation or failed transaction logs with cluster/program ID. Do not rely solely on a disabled UI button. | The pool itself refuses an unadmitted wallet. |
+| 1:20–1:45 | `/operator/halts`: source timestamp → relay observation → on-chain halt; trade view shows `TradingHalted`. Stop the relay in a controlled fork/devnet capture and show `HaltDataStale`. | Use a real mapped halt only if available. Otherwise label **local fork replay of real halt feed** and show source, relay sequence, transaction refusal, and measured latency. Never call the replay a live mainnet halt. | Halts are measured at minute scale; loss of feed stops swaps. |
+| 1:45–2:10 | Budget bar reaches the limit and swap returns `CapReached`. Then fork time travel: second recorded breach → `Paused`; advance ~92 days → resumes; third-party issuer notice advances from day 0 to day 30 → activates. | Label **local Surfpool fork** throughout. Show the rejection codes, trade-date/budget values, issuer-receipt timestamp and time-travel command inset. | Share limits and waiting periods are enforced by program state. |
+| 2:10–2:35 | `/operator/public-notice`: chain-derived authority fields beside required human entries. `/operator/rehearsal/fwdi`: real mint, freeze authority and frozen Manifest vault. | Show real FWDI mint `7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9`; distinguish read-only mainnet inspection from fork actions. Quote a share budget only if the refreshed source confirms it. | The operator must know who controls the contracts and coordinate with the issuer before opening. |
+| 2:35–2:50 | `/about`: real-vs-stand-in table and devnet proof links. Click one signature through to Solscan. | Verify explorer cluster, program ID and finalized signature on screen. Mainnet proof appears here only if deployed and verified. | Viewers can check the chain evidence and its limits. |
+| 2:50–3:00 | End card: Bellwether, public repo, live app and demo link if each resolves. | Remove any unverified URL or mainnet claim before export. | Close on venue rails and a concrete next step for an operator. |
+
+## Recording gates
+
+1. Record the admitted swap, unadmitted refusal and tape match through the actual UI on devnet. Check the transaction links, not only the success toast.
+2. Record halt and time-travel segments in a labelled fork when no real mapped halt occurs. Keep the fork RPC on localhost and never display secret keys or local service environment files.
+3. Record the notice and FWDI views from live reads; show empty/error states if data is unavailable rather than using stand-in numbers.
+4. Check every filmed claim against the final environment. If mainnet is not deployed, replace the source film's R1/R2 mainnet wording with **devnet** on screen and in Gabriel's beat.
+5. Have Gabriel record the voice, then verify the rendered film length, captions/legibility, audio and public upload link before adding it to the portal.
