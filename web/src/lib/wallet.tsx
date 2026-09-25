@@ -9,7 +9,6 @@
  *   swapInstruction(market, { owner: signer!, ownerStock, ownerUsdc }, args)   // signer is a kit TransactionSendingSigner
  */
 import {
-  createSolanaRpc,
   getBase58Decoder,
   getBase58Encoder,
   getBase64Decoder,
@@ -38,6 +37,7 @@ import {
 } from "@wallet-standard/features"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
 import { clusterConfig, walletChain } from "@/lib/cluster"
+import { sendForkTransaction } from "@/lib/wallet-ui/fork-rpc"
 
 export type WalletStatus = "disconnected" | "connecting" | "connected"
 
@@ -161,14 +161,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     if (clusterConfig().local) {
       const sign = wallet.features[SolanaSignTransaction]
       if (!sign) throw new WalletError(`${wallet.name} cannot sign without sending, which the local fork needs`)
-      const rpc = createSolanaRpc(clusterConfig().rpcUrl)
       const signed = await sign.signTransaction(
         ...transactions.map((tx) => ({ account, chain, transaction: new Uint8Array(txEncoder.encode(tx)) })),
       )
       const sigs: SignatureBytes[] = []
       for (const { signedTransaction } of signed) {
-        const wire = b64.decode(signedTransaction) as Parameters<typeof rpc.sendTransaction>[0]
-        const sig = await rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" }).send()
+        const wire = b64.decode(signedTransaction)
+        const sig = await sendForkTransaction(clusterConfig().rpcUrl, wire)
         sigs.push(b58Bytes.encode(sig) as SignatureBytes)
       }
       return sigs

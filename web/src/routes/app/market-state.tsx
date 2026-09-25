@@ -1,5 +1,6 @@
 import { Link } from "react-router"
-import { useCredential, useSymbols, useTape, type Pair } from "@/lib/api"
+import { useQuery } from "@tanstack/react-query"
+import { api, queryKeys, useSymbols, useTape, type Pair } from "@/lib/api"
 import { useMarketAccounts } from "@/lib/wallet-ui/chain"
 import { useWallet } from "@/lib/wallet"
 import { formatUnits, formatUsd } from "@/lib/format"
@@ -9,23 +10,29 @@ export function useParticipantMarket(symbol: string) {
   const symbols = useSymbols()
   const pair = symbols.data?.symbols.find((item) => item.symbol.toUpperCase() === symbol.toUpperCase()) ?? null
   const chain = useMarketAccounts(pair, wallet.publicKey)
-  const credential = useCredential(wallet.publicKey)
+  const credential = useQuery({
+    queryKey: queryKeys.credential(wallet.publicKey),
+    queryFn: ({ signal }) => api.credential(wallet.publicKey!, AbortSignal.any([signal, AbortSignal.timeout(12_000)])),
+    enabled: !!wallet.publicKey,
+    retry: false,
+    refetchInterval: 60_000,
+  })
   const tape = useTape({ symbol: symbol.toUpperCase() })
   return { wallet, symbols, pair, chain, credential, tape }
 }
 
 export type ParticipantMarket = ReturnType<typeof useParticipantMarket>
 
-function availableShares(market: ParticipantMarket): bigint {
+export function shareBudget(market: ParticipantMarket): { used: bigint; cap: bigint; remaining: bigint } {
   const state = market.chain.data
-  if (!state) return 0n
+  if (!state) return { used: 0n, cap: 0n, remaining: 0n }
   const { symbol, venue, chainTime } = state
   let day = Math.floor(Math.max(0, chainTime - Number(venue.tradeDateCutoff)) / 86_400)
   const weekday = (day + 4) % 7
   if (weekday === 6) day -= 1
   if (weekday === 0) day -= 2
   const traded = symbol.tradeDate === BigInt(day) ? symbol.sharesTradedToday : 0n
-  return symbol.capShares > traded ? symbol.capShares - traded : 0n
+  return { used: traded, cap: symbol.capShares, remaining: symbol.capShares > traded ? symbol.capShares - traded : 0n }
 }
 
 export function MarketLoad({ market, symbol }: { market: ParticipantMarket; symbol: string }) {
@@ -51,10 +58,10 @@ export function blockReason(market: ParticipantMarket, forDeposit = false): { ti
   const { symbol, venue } = chain.data
   if (symbol.halted) return { title: forDeposit ? "Halted · withdraw only" : "Halted by Nasdaq", detail: "Program refusal: TradingHalted" }
   const age = chain.data.chainTime - Number(symbol.lastHeartbeat)
-  if (age > Number(venue.heartbeatMaxAge)) return { title: "Halt data stale · trading paused", detail: `Program refusal: HaltDataStale · last heartbeat ${age}s ago` }
+  if (age > Number(venue.heartbeatMaxAge)) return { title: "Halt data stale", detail: `Program refusal: HaltDataStale · last heartbeat ${age}s ago` }
   if (!symbol.active) return { title: "Market is not active", detail: "Program refusal: NotActive" }
   if (Number(symbol.pausedUntil) > chain.data.chainTime) return { title: "Paused after second breach", detail: `Program refusal: Paused · resumes ${new Date(Number(symbol.pausedUntil) * 1000).toLocaleDateString()}` }
-  if (availableShares(market) === 0n) return { title: "Daily cap reached", detail: "Program refusal: CapReached" }
+  if (shareBudget(market).remaining === 0n) return { title: "Daily cap reached", detail: "Program refusal: CapReached" }
   return null
 }
 
@@ -63,19 +70,19 @@ export function VenueStatus({ market }: { market: ParticipantMarket }) {
   if (!state) return null
   const { symbol, venue, pool } = state
   const age = Math.max(0, state.chainTime - Number(symbol.lastHeartbeat))
-  const budget = formatUnits(availableShares(market), pool.stockDecimals)
+  const budget = formatUnits(shareBudget(market).remaining, pool.stockDecimals)
   const total = formatUnits(symbol.capShares, pool.stockDecimals)
   const reason = blockReason(market)
   return <section className="rounded-xl border bg-card p-4" aria-label="Venue status">
     <div className="flex items-center justify-between gap-2"><h2 className="font-semibold">Venue status</h2><span className="text-xs text-muted-foreground">Onchain SymbolRecord</span></div>
-    {reason && <div className="mt-3 rounded-lg border p-3 text-sm"><strong>{reason.title}</strong><p className="mt-1 text-muted-foreground">{reason.detail}</p>{reason.action && <Link to={reason.action} className="underline">Get admitted →</Link>}</div>}
+    {reason && <div className="mt-3 rounded-lg border p-3 text-sm"><strong>{reason.title}</strong><p className="mt-1 text-muted-foreground">{reason.detail}</p>{reason.action && <Link to={reason.action} className="underline">Get admitted →</Link>}{market.credential.isError && <button type="button" className="mt-2 block underline" onClick={() => void market.credential.refetch()}>Retry credential check</button>}</div>}
     <dl className="mt-3 grid gap-2 text-sm">
       <Row label="Halt" value={symbol.halted ? `Halted · ${symbol.haltReason || "reason unavailable"}` : "Clear"} />
       <Row label="Heartbeat" value={`${age}s ago · limit ${venue.heartbeatMaxAge}s`} />
       <Row label="Share budget remaining" value={`${budget} / ${total}`} />
       <Row label="Activation" value={symbol.active ? "Active" : "Inactive"} />
       <Row label="Breaches" value={String(symbol.breachCount)} />
-      <Row label="Credential" value={market.credential.isPending ? "Checking…" : market.credential.data?.status ?? "Unavailable"} />
+      <Row label="Credential" value={!market.wallet.publicKey ? "Connect wallet to check" : market.credential.isPending ? "Checking…" : market.credential.isError ? "Issuer unavailable" : market.credential.data?.status ?? "Unavailable"} />
     </dl>
   </section>
 }
