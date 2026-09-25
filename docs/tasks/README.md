@@ -29,3 +29,10 @@ Proven by the harness (9/15): blk_program_core, blk_program_rules, blk_rehearsal
 blk_halt_relay, blk_caps_data, blk_tape, blk_notice_builder, blk_credentials. Web shell committed (41a65df).
 Remaining: blk_fork_env (+ go-live script), credential hardening + API routes (rework), 3 screen blocks (wait for
 Gabriel's screen approval), blk_mainnet_deploy (needs Gabriel's funds + fork green), blk_web_deploy (needs hosting/domain OK).
+
+## Hosting decision (Gabriel, 2026-09-25)
+Everything on Cloudflare (account 893c47cc…, vault CLOUDFLARE_API_TOKEN: Workers + Pages + larinova.com DNS; no D1/KV).
+- Web: Cloudflare Pages, custom domain **bellwether.larinova.com**.
+- Services (relay cron each minute, caps daily cron, indexer + API with a SQLite-backed Durable Object, credential
+  service): Cloudflare Workers at **api.bellwether.larinova.com**. Keep services runnable on Node too (dev/fork).
+- Nothing is deployed until devnet is green end to end; the web-deploy task will be assigned then.
