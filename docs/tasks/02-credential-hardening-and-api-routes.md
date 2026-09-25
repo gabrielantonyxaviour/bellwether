@@ -71,3 +71,19 @@ found 200 responses on `/`, `/halts`, `/venue`, `/symbols`, `/tape`,
 `/notice/draft`, and `/rehearsal/fwdi`; allowed and denied CORS origins behaved
 as specified, and sampled JSON contained no local paths or stack traces.
 The public API hostname is `bellwether-api.larinova.com`.
+
+### Fork issuer RPC follow-up
+
+Commit `c2f0283` handles an intermittent Surfpool `sendTransaction` preflight
+response with JSON-RPC error code `-32002` but no `error.data`. The Solana error
+library previously raised a TypeError while destructuring the absent data,
+discarding the RPC message. The credential chain now preserves that message at
+the transport boundary. Only messages identifying transient RPC/upstream failures
+are retried; transaction failures and unknown preflight errors are not retried.
+The unit test feeds the same raw JSON-RPC response to the default chain and
+credential chain, proving the TypeError before the fix and the preserved message
+after it. Credential unit tests passed 11/11, typecheck passed, the isolated fork
+check passed 36/36, and Abel re-verification of `blk_credentials` **passed**.
+The observed failure was on a Surfpool mainnet fork; the public devnet proof had
+already succeeded. The browser's separate liquidity-deposit sender is owned by
+the participant worker and is outside this issuer fix.
