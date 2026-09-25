@@ -7,17 +7,18 @@ Draft checklist. A checked box needs a saved URL, command output, or on-screen c
 - [x] Devnet venue program, BWRS and test USDC seeded; admitted swap finalized and appeared on `/tape`. See [`devnet.json`](../../scripts/deploy/deployments/devnet.json) and [example transaction](https://solscan.io/tx/3opPyjqKMpd5ubVimz33BX2xH87gWUcXdW6X6wpsSb3NCopRiu7oU5UNkkocoZVmnmqyupPSwpVZ3yTtvYUtCC7P?cluster=devnet).
 - [x] Local mainnet-fork scenario checked real FWDI mint, 30-day issuer window and second-breach pause. Fork-only thaw/funding are labelled as stand-ins.
 - [x] Public devnet service proof: a fresh wallet signed admission, received fee SOL and test USDC, swapped in a finalized transaction, and the same signature appeared on the [HTTPS API tape](https://bellwether-api.larinova.com/tape?date=2026-09-25). See [`devnet.json`](../../scripts/deploy/deployments/devnet.json). The [web explorer](https://bellwether.larinova.com/explorer?date=2026-09-25) is checked separately below.
-- [ ] Devnet **browser** journey: wallet admission → review/sign/swap → same print in public tape; refusal, halt/stale, cap, liquidity, operator and public pages checked end to end. Save proof links, environment labels and results.
-- [ ] Check each page at 375, 768 and 1440 px and resolve any blocking UI state before filming.
-- [ ] Re-run acceptance and Abel harness verification for the relevant blocks after the last edits; report the block verdicts, not a general “green.”
+- [x] Devnet browser evidence: wallet signed challenge, OFAC SDN screen and SAS credential, funded admission, signed buy, finalized print on the public tape, LP deposit and full withdrawal. The onboarding panel links list freshness, attestation, admission transaction and thaw. See [`docs/tasks/03-participant-screens.md`](../tasks/03-participant-screens.md) and [`docs/tasks/08-journeys.md`](../tasks/08-journeys.md). Admission is a test control, not KYC.
+- [x] Abel Circuit shows **12/12 screens and 5/5 systems proven**, plus the public web block. The six cross-screen journeys remain **0/6 proven** by its scenario harness; see the [journey report](../tasks/08-journeys.md) for observed partial checks.
+- [x] Screen blocks checked at 375, 768 and 1440 px; participant live fixes and public route checks are recorded in the task reports.
+- [ ] Record the final demo takes from the live devnet and labelled local fork; verify visible signatures, error codes, audio and timing.
 
 ## Publication gates
 
-- [ ] Run a secrets audit on the exact tracked files and commit history intended for GitHub. Review keypair paths, `.env` files, deployment journals, logs and media metadata. Confirm no private key or operator token is exposed.
+- [ ] Complete the final secrets audit on the exact HEAD intended for GitHub, including all history and nonignored worktree paths. The prior [audit](../tasks/07-secrets-audit.md) and publication-prep rescan found no live secret; repeat the scan if commits or media change before pushing.
 - [ ] Add a root MIT `LICENSE` if that is the intended license; verify the public README reflects the actual terms.
 - [ ] Make <https://github.com/gabrielantonyxaviour/bellwether> public after the audit; open it without a signed-in session and check source, README and relevant proof links.
 - [x] Deploy Cloudflare Pages at <https://bellwether.larinova.com> and the named tunnel at <https://bellwether-api.larinova.com>; verify HTTPS, public devnet `config.json`, [API health](https://bellwether-api.larinova.com/health) and `/tape` read-back. The deployed web serves `/`, `/explorer`, `/about` and `/app/*` on devnet; the dated explorer shows the finalized fresh-wallet swap. See `checks/public-url.ts` and commit `007800a`.
-- [ ] Verify the deployed browser wallet and operator journeys from a fresh session against the public services before portal submission.
+- [x] Verify the deployed browser wallet's admission, swap, tape, LP deposit and withdrawal against public devnet services; operator screen block passed its isolated fork harness. The six formal Circuit journeys remain pending.
 - [ ] Upload the ≤3:00 video with Gabriel's voice. Open the public video URL anonymously; check audio, labels and end card.
 
 ## Mainnet pitch gate

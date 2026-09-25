@@ -2,11 +2,11 @@
 
 Bellwether is a Solana venue-program prototype and operator workbench for the SEC's [Tokenized Securities Venue Innovation Exemption (Release 34-106402)](https://www.sec.gov/files/rules/exorders/2026/34-106402.pdf). It demonstrates permissioned rehearsal-stock swaps, exchange-halt and stale-feed stops, share budgets, listing clocks, and a public trade tape.
 
-**Status:** Cloudflare Pages serves the devnet app at <https://bellwether.larinova.com> (`/`, `/explorer`, `/about`, `/app/*`). The API and test-admission service use <https://bellwether-api.larinova.com>. A fresh wallet signed admission, received devnet fee SOL and test USDC, swapped BWRS, and saw its finalized print on the [public explorer](https://bellwether.larinova.com/explorer?date=2026-09-25) and [API tape](https://bellwether-api.larinova.com/tape?date=2026-09-25). A local Surfpool mainnet fork exercised the program against the real FWDI mint. Mainnet trading has not been deployed. Bellwether is not an operating securities venue.
+**Status:** Cloudflare Pages serves the devnet app at <https://bellwether.larinova.com>; the API and test-admission service use <https://bellwether-api.larinova.com>. A browser wallet signed admission, received devnet fee SOL and test USDC, swapped BWRS, and saw its finalized print on the [public explorer](https://bellwether.larinova.com/explorer?date=2026-09-25) and [API tape](https://bellwether-api.larinova.com/tape?date=2026-09-25). Browser checks also confirmed LP deposit and full withdrawal. Abel's harness marks 12/12 screens and 5/5 systems proven; the six cross-screen journeys have no Abel scenario verdict yet. A local Surfpool mainnet fork exercised the program against the real FWDI mint. Mainnet trading has not been deployed. Bellwether is not an operating securities venue.
 
 ## Quick start
 
-To inspect the public devnet build, open the [home page](https://bellwether.larinova.com), [dated trade explorer](https://bellwether.larinova.com/explorer?date=2026-09-25), [environment details](https://bellwether.larinova.com/about), or [API health](https://bellwether-api.larinova.com/health). The hosted browser wallet journey still needs final end-to-end recording.
+To inspect the public devnet build, open the [home page](https://bellwether.larinova.com), [dated trade explorer](https://bellwether.larinova.com/explorer?date=2026-09-25), [environment details](https://bellwether.larinova.com/about), or [API health](https://bellwether-api.larinova.com/health). The app includes three public, three participant, and six operator screens. The demo film still needs a public upload.
 
 From a clone with Node.js ≥22, pnpm, Rust/Solana SBF tools and Surfpool installed:
 
@@ -48,6 +48,8 @@ The program's swap path checks credential → halt and heartbeat freshness → a
 | Mainnet | **[PROGRAM ID AND VERIFIED TRANSACTIONS AFTER DEPLOYMENT]** | No mainnet execution is claimed here. |
 
 FWDI is used for read-only issuer and authority rehearsal. The fork's account thaw stands in for action by FWDI's transfer agent. BWRS does not represent FWDI equity. Admission is a test credential and does not complete KYC or legal participant eligibility checks.
+
+The admission issuer screens the connected wallet against the OFAC SDN digital-currency address list and issues a Solana Attestation Service credential after a signed challenge. The onboarding evidence panel shows the SDN source and freshness, credential and schema, wallet attestation, admission transaction, stock-account thaw, and expiry. Those are inspectable test controls; a real venue needs its own eligibility process and ongoing obligations.
 
 ## Run the local app against devnet
 
