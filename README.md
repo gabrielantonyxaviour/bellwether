@@ -2,6 +2,8 @@
 
 Bellwether is a Solana venue-program prototype and operator workbench for the SEC's [Tokenized Securities Venue Innovation Exemption (Release 34-106402)](https://www.sec.gov/files/rules/exorders/2026/34-106402.pdf). It demonstrates permissioned rehearsal-stock swaps, exchange-halt and stale-feed stops, share budgets, listing clocks, and a public trade tape.
 
+**Public source:** <https://github.com/gabrielantonyxaviour/bellwether> (`main`, filtered to exclude `docs/film/` and third-party media).
+
 **Status:** Cloudflare Pages serves the devnet app at <https://bellwether.larinova.com>; the API and test-admission service use <https://bellwether-api.larinova.com>. A browser wallet signed admission, received devnet fee SOL and test USDC, swapped BWRS, and saw its finalized print on the [public explorer](https://bellwether.larinova.com/explorer?date=2026-09-25) and [API tape](https://bellwether-api.larinova.com/tape?date=2026-09-25). Browser checks also confirmed LP deposit and full withdrawal. Abel's harness marks 12/12 screens and 5/5 systems proven; the six cross-screen journeys have no Abel scenario verdict yet. A local Surfpool mainnet fork exercised the program against the real FWDI mint. Mainnet trading has not been deployed. Bellwether is not an operating securities venue.
 
 ## Quick start
@@ -80,4 +82,4 @@ The [SEC order](https://www.sec.gov/files/rules/exorders/2026/34-106402.pdf) pla
 
 ## License
 
-This repository is licensed under the [MIT License](LICENSE). Third-party dependencies retain their own licenses.
+The [published repository](https://github.com/gabrielantonyxaviour/bellwether) includes a root [MIT License](https://github.com/gabrielantonyxaviour/bellwether/blob/main/LICENSE). Third-party dependencies retain their own licenses.
