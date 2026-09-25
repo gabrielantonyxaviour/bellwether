@@ -1,0 +1,1835 @@
+{
+  "version": 1,
+  "meta": {
+    "productId": "prod_081357ef-1e52-421c-ad10-8a03a624f889",
+    "idea": "Bellwether \u2014 SEC Innovation Exemption venue rails on Solana",
+    "persona": "A US operator preparing a Tokenized Securities Venue (TSV) on Solana; a credentialed investor who trades on it",
+    "version": "1.0.0",
+    "discoveryMode": "fresh",
+    "track": "Stocklana main track",
+    "prizeTarget": "Main track only (the $100k pool). No cash bounties by decision.",
+    "repoPath": "/Users/gabrielantonyxaviour/Documents/products/bellwether",
+    "gitBranch": "v1.0.0",
+    "checkoutPath": "/Users/gabrielantonyxaviour/Documents/products/bellwether"
+  },
+  "idea": {
+    "oneLiner": "Solana permissioned pools plus an operator workbench that let a US venue trade real tokenized stocks under the SEC's Innovation Exemption, with access, halts, share-volume caps and the public tape enforced by the program.",
+    "whatItIs": "A Solana program that runs permissioned stock-vs-USDC pools and refuses any trade that breaks the venue rulebook (unapproved wallet, halted stock, stale halt data, volume cap reached, listing not yet allowed). Around it: a halt relay from Nasdaq, a volume and tier data job, a public trade tape, an issuer-notice tracker, a public-notice builder that reads contract authorities from chain, and a launch rehearsal on the real Forward Industries (FWDI) token (authorities, allowlist design, and its only market's still-frozen vault). Three apps: operator workbench, participant app, public tape. Live on Solana mainnet with a rehearsal stock token; a mainnet fork runs the same program against the real FWDI token.",
+    "problem": {
+      "statement": "Since 2026-09-17 a US Tokenized Securities Venue may trade tokenized US-listed stock in permissioned AMM pools without registering as an exchange, but only if it permissions every participant, halts with the primary listing exchange, keeps each stock under LULD-tiered share-volume and symbol caps, publishes USD trade data within 10 minutes with 30 days of history, gives third-party issuers 30 days to object, publishes a ~30-item notice 30 days before operating (including who can pause, upgrade or override its contracts), and extends no credit. On Solana, where ~95% of tokenized-equity volume trades, we found no public tooling that enforces and evidences these conditions at the pool level.",
+      "who": "Primary: the operator, a US entity preparing to run a TSV on Solana (plausible paths: Superstate taking tokenized stocks to Orca/Raydium; Backpack). Also: credentialed participants (investors), Covered Firms (liquidity providers), issuers receiving notices, and the public reading the tape.",
+      "whyNow": "SEC Release 34-106402 took effect 2026-09-17 for five years. Venues must publish a 30-day notice, so the first can open mid-to-late October and operators are preparing now. The Solana Policy Institute wrote on solana.com: 'That is a compliance product waiting to be built.'"
+    },
+    "mechanism": {
+      "novel": "The venue rulebook lives in the pool program's own swap path: SAS credential check, halt state with a heartbeat that fails closed, per-trade-date share counters against a data-fed cap with the order's breach state machine, an issuer-notice clock that gates pool activation, non-transferable LP positions, and tape-grade events. The workbench turns chain state into the evidence the order asks for.",
+      "whyOnlyHere": "The order requires public, auditable contracts on a public permissionless ledger. Solana carries ~95% of tokenized-equity volume and the only live issuer-tokenized US stock built for this regime (Superstate's allowlisted FWDI). Token-2022 frozen-by-default accounts and the Solana Attestation Service give native permissioning.",
+      "beats": [
+        "Uniswap v4 Permissioned Pools (Ethereum only; access checks, not venue caps/halts/tape/notice)",
+        "A frontend allowlist in front of a public AMM (bypassable)",
+        "Pools that halt on exchange halts as a single feature (bellcurve, arclis in this hackathon)",
+        "Manual compliance spreadsheets and legal memos"
+      ]
+    },
+    "whyItWins": "It answers the Solana Foundation's own written call, and none of the ~175 visible Stocklana entries build under the exemption. It has depth (an on-chain enforcement program plus a real-data workbench), runs live on mainnet, and stays useful for the order's five-year term.",
+    "proofMoment": "On Solana mainnet: a credentialed wallet swaps the rehearsal stock for USDC and an uncredentialed wallet is rejected on-chain. A real Nasdaq halt arrives through the relay and the next swap fails with TradingHalted, with measured minute-scale latency shown. A volume push reaches the daily share budget and the pool refuses. The public tape updates. The workbench shows the real FWDI authority map, the notice draft, and FWDI's only market (a Manifest order book) whose vault is still frozen, i.e. why a venue needs the transfer agent to thaw its pool vault. On a Surfpool mainnet fork (recorded, not public), the same program trades the real FWDI mint, and time travel shows the 30-day issuer window and the 3-month pause after a second breach.",
+    "marketSignal": [
+      {
+        "claim": "The Solana Foundation's policy arm publicly asked for this product category",
+        "evidence": "https://solana.com/news/stocks-sec-innovation-exemption \u2014 'That is a compliance product waiting to be built.'",
+        "sourceType": "ecosystem publication (judges' own organisation)"
+      },
+      {
+        "claim": "A tokenized-stock issuer intends to trade on Solana AMMs under the exemption",
+        "evidence": "Superstate, Sep 18 2026: working to enable its tokenized stocks on Uniswap, Orca and Raydium (via Foresight/ME News)",
+        "sourceType": "public statement, secondary report"
+      },
+      {
+        "claim": "The primitive exists on Ethereum and was built with that issuer",
+        "evidence": "Uniswap v4 Permissioned Pools launch post (Jul 23 2026), Superstate design partner",
+        "sourceType": "competitor product launch"
+      },
+      {
+        "claim": "Permissioned AMM pools for tokenized NMS stock are not yet available",
+        "evidence": "Mayer Brown memo, Sep 22 2026",
+        "sourceType": "law-firm analysis"
+      },
+      {
+        "claim": "No visible Stocklana competitor builds under the exemption",
+        "evidence": "GitHub scan of 185 'stocklana' repos (~175 real entries); only vestail touches permissioning",
+        "sourceType": "crowding scan (partial: ~60% of submissions)"
+      }
+    ],
+    "risks": [
+      {
+        "risk": "Judges read B2B compliance tooling as 'not an app people use'",
+        "mitigation": "Polished participant app and a live mainnet pool anyone credentialed can trade; operator story tied to named near-term paths",
+        "killIf": "n/a during the hackathon \u2014 accepted as the main-track bet"
+      },
+      {
+        "risk": "Mainnet program too large for the $30 budget",
+        "mitigation": "Pinocchio, minimal on-chain scope, release profile tuned for size; measure the .so before asking for funds",
+        "killIf": "Compiled program needs more than Gabriel approves \u2192 run live pool on devnet + fork, workbench on mainnet"
+      },
+      {
+        "risk": "Legal wording wrong or overstated",
+        "mitigation": "Quote the order (REGULATION.md); share volume not USD; minute-scale halts; 'not a registered venue'; 'test admission, not KYC'",
+        "killIf": "n/a \u2014 fix wording"
+      },
+      {
+        "risk": "Real FWDI has almost no on-chain trading (no Orca pool; its only market is a Manifest order book with a frozen vault and 0 swaps in 30 days)",
+        "mitigation": "Rehearsal shows authorities, allowlist design and the frozen-vault finding instead of a tape; the halt demo uses a live Nasdaq halt of any mapped symbol",
+        "killIf": "n/a"
+      },
+      {
+        "risk": "Build does not finish by 20:00 UTC",
+        "mitigation": "Program + relay + tape + participant trade flow first; workbench pages in priority order; fork and devnet in parallel",
+        "killIf": "By 16:00 UTC no mainnet or fork swap passes all gates \u2192 submit fork/devnet proof and the workbench"
+      }
+    ],
+    "openQuestions": [
+      {
+        "question": "Exact mainnet deploy amount",
+        "whyItMatters": "First deploy needs ~1x program rent up front (5,080 lamports/byte measured; 30 KiB \u2248 0.157 SOL \u2248 $18, 40 KiB \u2248 0.209 SOL \u2248 $24 at SOL \u2248 $116.65) plus ~0.02 SOL of accounts and fees",
+        "myLean": "Approve after the compiled size is measured; target \u2264 40 KiB; cap $30"
+      },
+      {
+        "question": "Mainnet pool quote asset: real USDC (tiny liquidity) or a test stablecoin",
+        "whyItMatters": "Real USDC is honest; a test stablecoin lets judges try it without funds",
+        "myLean": "Real USDC pool with ~$2\u20133, plus a free rehearsal-USD pool on the fork/devnet for judges"
+      },
+      {
+        "question": "Trade-date boundary for daily share counters",
+        "whyItMatters": "Order fn 69: 'the next trade date will start concurrently with when trades must be reported to the SIP'; SIP reporting currently opens ~4:00 a.m. ET (8:00 p.m. ET the prior evening from 2026-12-06)",
+        "myLean": "Trade date rolls at 04:00 ET on business days (weekend volume counts toward Friday's trade date); configurable for the Dec 6 change"
+      },
+      {
+        "question": "Halt heartbeat staleness threshold",
+        "whyItMatters": "Too short causes false stops; too long weakens halt sync",
+        "myLean": "180 seconds (feed updates once a minute), configurable"
+      },
+      {
+        "question": "May LPs withdraw while a symbol is halted",
+        "whyItMatters": "The order stops trading; withdrawal is not a trade between participants",
+        "myLean": "Allow withdraw, block swaps and deposits"
+      },
+      {
+        "question": "Web hosting target for the app and services",
+        "whyItMatters": "Gabriel names deploy targets; judges need a public URL",
+        "myLean": "Cloudflare: Pages for the app, Workers (cron each minute) for the halt relay and indexer, D1 for the tape; already logged in"
+      },
+      {
+        "question": "Public access to the fork",
+        "whyItMatters": "Surfpool cheatcodes are callable by anyone who can reach its RPC, so a raw public fork can be manipulated",
+        "myLean": "Fork is recorded for the video and run locally; judges try mainnet and devnet"
+      }
+    ]
+  },
+  "roles": [
+    "operator",
+    "participant",
+    "covered_firm",
+    "issuer",
+    "public"
+  ],
+  "decisions": [
+    {
+      "id": "d_track",
+      "question": "Which prizes to target",
+      "chosen": "Main track only",
+      "why": "No bounty fits naturally; DBC is primary issuance (banned on a TSV) and pre-IPO tokens are not NMS stock",
+      "rejected": [
+        "Main + Tessera (DueDate)",
+        "Main + Meteora/Clawpump launcher"
+      ]
+    },
+    {
+      "id": "d_env",
+      "question": "Where the product runs",
+      "chosen": "Solana mainnet (program + rehearsal token + real USDC), Surfpool mainnet fork (real FWDI mint, time travel; local and recorded, not public), devnet public fallback",
+      "why": "Gabriel wants it fully live and testable on mainnet; the fork proves behaviour with the real stock token and weeks-long rules",
+      "rejected": [
+        "Local-only",
+        "Devnet-only"
+      ]
+    },
+    {
+      "id": "d_framework",
+      "question": "On-chain framework",
+      "chosen": "Pinocchio (no_std, zero-copy), size-optimised release profile",
+      "why": "Rent is ~5.1k lamports/byte; Anchor programs are typically 200 KB+, over budget",
+      "rejected": [
+        "Anchor",
+        "Native solana-program crate"
+      ]
+    },
+    {
+      "id": "d_gate",
+      "question": "Where permissioning and venue rules are enforced",
+      "chosen": "In the venue pool program's own instructions",
+      "why": "A TSV does not control the issuer's token (FWDI has no transfer hook, its transfer agent holds freeze authority); a frontend wrapper around a public pool is bypassable",
+      "rejected": [
+        "Token transfer hook",
+        "Frontend-only allowlist"
+      ]
+    },
+    {
+      "id": "d_halt_source",
+      "question": "Halt data source",
+      "chosen": "Nasdaq Trader halt RSS, polled once a minute, measured latency, fail-closed heartbeat",
+      "why": "Free, public, official; licensed low-latency feeds are out of scope and named as the production path",
+      "rejected": [
+        "Claiming concurrent halts",
+        "Paid SIP halt feeds"
+      ]
+    },
+    {
+      "id": "d_cap_mode",
+      "question": "How caps behave",
+      "chosen": "Per-trade-date share budget = tier % \u00d7 prior-month consolidated ADV, hard stop at the budget (stricter than the order's average-based test, which permits self-pausing early), plus a breach ledger applying the order's consequences (1st: going-forward compliance; later: 3-month pause, affiliates too) when a breach is recorded",
+      "why": "Prevents breaches while still implementing the order's first-breach / 3-month-pause rules",
+      "rejected": [
+        "Soft limit only",
+        "Ledger only"
+      ]
+    },
+    {
+      "id": "d_lp",
+      "question": "LP shares",
+      "chosen": "Internal, non-transferable LP positions per credentialed wallet",
+      "why": "A transferable LP token would let an unapproved wallet gain pool exposure",
+      "rejected": [
+        "LP SPL mint"
+      ]
+    },
+    {
+      "id": "d_asset",
+      "question": "What stock the mainnet pool trades",
+      "chosen": "A rehearsal Token-2022 stock mint mirroring FWDI's design (frozen by default, freeze-authority thaw, scaled UI, metadata)",
+      "why": "Real FWDI needs Superstate KYC; a venue never controls the issuer's token",
+      "rejected": [
+        "Holding real FWDI",
+        "A plain SPL token"
+      ]
+    },
+    {
+      "id": "d_credential",
+      "question": "Participant credential",
+      "chosen": "Solana Attestation Service attestation from the venue's credential issuer (test admission with OFAC SDN address screening); membership PDA fallback",
+      "why": "Foundation-maintained, live on mainnet and devnet, has expiry and revocation",
+      "rejected": [
+        "Off-chain session only"
+      ]
+    }
+  ],
+  "stack": [
+    {
+      "layer": "On-chain",
+      "choice": "Rust + Pinocchio program (venue), LiteSVM/Mollusk tests",
+      "why": "Small binary, cheap mainnet deploy, fast tests"
+    },
+    {
+      "layer": "Local chain",
+      "choice": "Surfpool (mainnet fork, cheatcodes, time travel)",
+      "why": "Real FWDI state and weeks-long rules without spending"
+    },
+    {
+      "layer": "Services",
+      "choice": "TypeScript: halt relay (Cloudflare Worker cron every minute), volume/tier job (daily cron), tape indexer, credential issuer and API (Workers, zod-validated, errors {error, code?}); Node 24 locally",
+      "why": "One language across services and web"
+    },
+    {
+      "layer": "Web",
+      "choice": "React + Vite, ReUI/shadcn components, @solana/kit + wallet adapter",
+      "why": "Abel's functional ReUI screens; look applied later only after Gabriel's handoff"
+    },
+    {
+      "layer": "Data",
+      "choice": "SQLite locally; Cloudflare D1 when deployed",
+      "why": "Same SQL both places; D1 is free on Gabriel's existing Cloudflare account"
+    }
+  ],
+  "integrations": [
+    {
+      "sponsor": "Solana",
+      "primitive": "Mainnet program + Token-2022 (DefaultAccountState, ScaledUiAmount, metadata)",
+      "loadBearing": true,
+      "whatWeUse": "Venue program, rehearsal stock mint, USDC vaults"
+    },
+    {
+      "sponsor": "Solana Foundation",
+      "primitive": "Solana Attestation Service (22zoJMtdu4tQc2PzL74ZUT7FrwgB1Udec8DdW4yw4BdG)",
+      "loadBearing": true,
+      "whatWeUse": "Participant and LP credentials verified inside the swap",
+      "provenBy": "codex-research.md \u00a710(b): executable on mainnet slot 450241394 and devnet"
+    },
+    {
+      "sponsor": "Nasdaq",
+      "primitive": "Trade halts RSS (once a minute)",
+      "loadBearing": true,
+      "whatWeUse": "Halt and resume events for the relay",
+      "provenBy": "Live fetch 2026-09-25 03:52 UTC: 55 items"
+    },
+    {
+      "sponsor": "Nasdaq.com / Yahoo Finance",
+      "primitive": "Keyless historical daily quotes (consolidated share volume)",
+      "loadBearing": false,
+      "whatWeUse": "Prior-month average daily share volume per symbol; Nasdaq.com primary, Yahoo cross-check",
+      "provenBy": "2026-09-25 06:10 UTC: FWDI Aug 2026 ADV 1,668,416 (Nasdaq API) vs 1,667,966 (Yahoo chart), 21 trading days"
+    },
+    {
+      "sponsor": "Superstate / Orca",
+      "primitive": "FWDI Token-2022 mint and its Orca pool (read-only)",
+      "loadBearing": false,
+      "whatWeUse": "Launch rehearsal: authority map, rebuilt tape, cap usage"
+    },
+    {
+      "sponsor": "Solana Foundation",
+      "primitive": "Surfpool",
+      "loadBearing": true,
+      "whatWeUse": "Mainnet fork running the program against the real FWDI mint with time travel"
+    }
+  ],
+  "dataModel": [
+    {
+      "entity": "VenueConfig",
+      "fields": [
+        "admin",
+        "relay_authority",
+        "credential_issuer",
+        "sas_schema",
+        "affiliate_group",
+        "symbol_counts_by_tier",
+        "heartbeat_max_age_s",
+        "trade_date_cutoff"
+      ],
+      "store": "on-chain PDA"
+    },
+    {
+      "entity": "SymbolRecord",
+      "fields": [
+        "symbol",
+        "mint",
+        "tier",
+        "issuer_sponsored",
+        "adv_shares_prior_month",
+        "cap_shares",
+        "trade_date",
+        "shares_traded_today",
+        "breach_count",
+        "paused_until",
+        "halted",
+        "halt_reason",
+        "last_heartbeat",
+        "activation_state",
+        "notice_received_at",
+        "objected"
+      ],
+      "store": "on-chain PDA"
+    },
+    {
+      "entity": "Pool",
+      "fields": [
+        "symbol",
+        "stock_vault",
+        "usdc_vault",
+        "reserves",
+        "fee_bps",
+        "lp_total"
+      ],
+      "store": "on-chain PDA"
+    },
+    {
+      "entity": "LpPosition",
+      "fields": [
+        "pool",
+        "owner",
+        "shares"
+      ],
+      "store": "on-chain PDA (non-transferable)"
+    },
+    {
+      "entity": "TapePrint",
+      "fields": [
+        "signature",
+        "pair",
+        "price_usd",
+        "size_shares",
+        "time",
+        "direction",
+        "pool",
+        "program",
+        "daily_volume",
+        "eod_pool_size"
+      ],
+      "store": "SQLite"
+    },
+    {
+      "entity": "HaltLedgerEntry",
+      "fields": [
+        "symbol",
+        "reason_code",
+        "nasdaq_halt_time",
+        "feed_seen_at",
+        "tx_confirmed_at",
+        "resumed_at"
+      ],
+      "store": "SQLite"
+    },
+    {
+      "entity": "IssuerNotice",
+      "fields": [
+        "symbol",
+        "issuer",
+        "address_source",
+        "sent_at",
+        "received_at",
+        "deadline",
+        "objection"
+      ],
+      "store": "SQLite + on-chain activation record"
+    },
+    {
+      "entity": "PublicNoticeDraft",
+      "fields": [
+        "items[30]",
+        "chain_facts",
+        "operator_inputs",
+        "published_at",
+        "material_change_log"
+      ],
+      "store": "SQLite"
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "ct_venue",
+      "kind": "contract",
+      "name": "Bellwether venue program (Pinocchio)",
+      "lane": "logic",
+      "contract": "Instructions: init_venue, register_symbol (tier; refuses beyond 75 Tier-1 / 250 Tier-2 symbols), record_issuer_notice / record_objection / activate_pool (third-party tokenized stock only after 30 days with no objection), init_pool, set_cap (authority), set_halt / clear_halt / heartbeat (relay authority), add_liquidity / remove_liquidity (credentialed; non-transferable positions; withdraw allowed while halted), swap (credentialed; not halted; heartbeat fresh; activated; not paused; shares_traded_today + size \u2264 daily share budget), record_breach (1st: warning; later: pause 3 months). Emits a tape event per trade with symbols, price, size, UTC time, direction, pool and program. No credit, no issuance instructions."
+    },
+    {
+      "id": "job_halt_relay",
+      "kind": "job",
+      "name": "Halt relay (Nasdaq RSS \u2192 chain)",
+      "lane": "logic",
+      "contract": "Polls the Nasdaq halt RSS no more than once a minute, maps symbols to SymbolRecords, sends set_halt/clear_halt and a heartbeat each cycle, and records feed time, detection time and confirmed-enforcement time per event."
+    },
+    {
+      "id": "job_caps_data",
+      "kind": "job",
+      "name": "Volume and tier data job",
+      "lane": "logic",
+      "contract": "Fetches each symbol's prior-month consolidated average daily share volume and tier, computes the cap in shares, sets it on-chain before each trade date, and stores provenance; marks 'partial' when a source is missing."
+    },
+    {
+      "id": "job_tape_indexer",
+      "kind": "job",
+      "name": "Tape indexer",
+      "lane": "logic",
+      "contract": "Subscribes to the program's events and publishes, free and machine-readable, each trade within 10 minutes (target: seconds) in USD: symbols, price, size, UTC time at the pool, direction, pool and contract address; plus rolling 24-hour pair volume and end-of-day pool size; keeps 30 days public."
+    },
+    {
+      "id": "job_fwdi_rehearsal",
+      "kind": "job",
+      "name": "FWDI launch rehearsal reader (mainnet, read-only)",
+      "lane": "logic",
+      "contract": "Reads the real FWDI mint's authorities and extensions (frozen-by-default allowlist, freeze authority/permanent delegate, mint/metadata/scaled-UI authority), finds its markets (today: one Manifest order book whose FWDI vault is frozen with 0 balance), reports on-chain trading activity honestly (0 swaps in the last 30 days at research time), computes FWDI's Tier-2 daily share budget from consolidated ADV (tier inferred, labelled), and audits Nasdaq halt history."
+    },
+    {
+      "id": "ep_api",
+      "kind": "endpoint",
+      "name": "Venue API",
+      "lane": "logic",
+      "contract": "Read endpoints for venue state, symbols, halts ledger, tape, notices and drafts; operator write endpoints for notices and drafts. zod-validated; errors {error, code?}."
+    },
+    {
+      "id": "ep_credential",
+      "kind": "endpoint",
+      "name": "Credential issuer",
+      "lane": "logic",
+      "contract": "Screens a wallet against the OFAC SDN digital-currency address list, then issues a time-limited SAS attestation (test admission, not KYC) and thaws the wallet's rehearsal-stock account; supports revoke."
+    },
+    {
+      "id": "pg_home",
+      "kind": "page",
+      "name": "Home (/)",
+      "lane": "ui",
+      "route": "/",
+      "routeType": "screen",
+      "contract": "What Bellwether is, live network status, links to trade, tape and proof.",
+      "roles": [
+        "public"
+      ],
+      "links": [
+        {
+          "to": "pg_tape",
+          "when": "Open tape",
+          "via": "contract"
+        },
+        {
+          "to": "pg_onboard",
+          "when": "Start trading",
+          "via": "contract"
+        },
+        {
+          "to": "pg_proof",
+          "when": "See proof",
+          "via": "contract"
+        },
+        {
+          "to": "pg_op_overview",
+          "when": "Operator workbench",
+          "via": "contract"
+        }
+      ]
+    },
+    {
+      "id": "pg_tape",
+      "kind": "page",
+      "name": "Public tape (/tape)",
+      "lane": "ui",
+      "route": "/tape",
+      "routeType": "screen",
+      "contract": "Every trade in USD with symbols, price, size, UTC time, direction, pool and contract address; rolling 24-hour pair volume and end-of-day pool size; 30 days; machine-readable JSON link.",
+      "roles": [
+        "public"
+      ],
+      "links": [
+        {
+          "to": "pg_home",
+          "when": "Home",
+          "via": "contract"
+        }
+      ],
+      "variants": [
+        {
+          "id": "empty",
+          "name": "No trades yet"
+        },
+        {
+          "id": "live",
+          "name": "Live prints"
+        }
+      ]
+    },
+    {
+      "id": "pg_proof",
+      "kind": "page",
+      "name": "Proof and environments (/proof)",
+      "lane": "ui",
+      "route": "/proof",
+      "routeType": "screen",
+      "contract": "Mainnet program id and accounts with explorer links, devnet endpoint, the fork scenario's recorded signatures, and the real-vs-stand-in table.",
+      "roles": [
+        "public"
+      ],
+      "links": [
+        {
+          "to": "pg_home",
+          "when": "Home",
+          "via": "contract"
+        }
+      ]
+    },
+    {
+      "id": "pg_onboard",
+      "kind": "page",
+      "name": "Get admitted (/app/onboard)",
+      "lane": "ui",
+      "route": "/app/onboard",
+      "routeType": "screen",
+      "contract": "Connect wallet, screen against OFAC SDN addresses, receive a test-admission credential, rehearsal-stock account thawed.",
+      "roles": [
+        "participant"
+      ],
+      "links": [
+        {
+          "to": "pg_trade",
+          "when": "Continue to trade",
+          "via": "contract"
+        }
+      ],
+      "variants": [
+        {
+          "id": "screening",
+          "name": "Screening"
+        },
+        {
+          "id": "admitted",
+          "name": "Admitted"
+        },
+        {
+          "id": "rejected",
+          "name": "Rejected: sanctioned or invalid"
+        }
+      ]
+    },
+    {
+      "id": "pg_trade",
+      "kind": "page",
+      "name": "Trade (/app/trade/[symbol])",
+      "lane": "ui",
+      "route": "/app/trade/[symbol]",
+      "routeType": "screen",
+      "contract": "Swap rehearsal stock and USDC; shows halt state with reason and latency, cap usage, activation state; on-chain rejection reasons shown plainly.",
+      "roles": [
+        "participant"
+      ],
+      "links": [
+        {
+          "to": "pg_tape",
+          "when": "See on tape",
+          "via": "contract"
+        },
+        {
+          "to": "pg_liquidity",
+          "when": "Provide liquidity",
+          "via": "contract"
+        }
+      ],
+      "variants": [
+        {
+          "id": "open",
+          "name": "Open"
+        },
+        {
+          "id": "halted",
+          "name": "Halted by Nasdaq"
+        },
+        {
+          "id": "stale",
+          "name": "Halt data stale: trading paused"
+        },
+        {
+          "id": "capped",
+          "name": "Daily cap reached"
+        },
+        {
+          "id": "paused",
+          "name": "3-month pause"
+        },
+        {
+          "id": "not_admitted",
+          "name": "Not admitted"
+        }
+      ]
+    },
+    {
+      "id": "pg_liquidity",
+      "kind": "page",
+      "name": "Provide liquidity (/app/liquidity/[symbol])",
+      "lane": "ui",
+      "route": "/app/liquidity/[symbol]",
+      "routeType": "screen",
+      "contract": "Credentialed LP adds or removes liquidity; positions are non-transferable; withdraw allowed while halted; Covered Firm disclosure shown.",
+      "roles": [
+        "covered_firm"
+      ],
+      "links": [
+        {
+          "to": "pg_trade",
+          "when": "Back to trade",
+          "via": "contract"
+        }
+      ],
+      "variants": [
+        {
+          "id": "open",
+          "name": "Open"
+        },
+        {
+          "id": "halted",
+          "name": "Halted: withdraw only"
+        }
+      ]
+    },
+    {
+      "id": "pg_op_overview",
+      "kind": "page",
+      "name": "Operator overview (/operator)",
+      "lane": "ui",
+      "route": "/operator",
+      "routeType": "screen",
+      "contract": "Symbols with tier, cap gauges in shares, halt status, heartbeat age, breach ledger summary, activation states.",
+      "roles": [
+        "operator"
+      ],
+      "links": [
+        {
+          "to": "pg_op_symbols",
+          "when": "Symbols",
+          "via": "contract"
+        },
+        {
+          "to": "pg_op_halts",
+          "when": "Halts",
+          "via": "contract"
+        },
+        {
+          "to": "pg_op_participants",
+          "when": "Participants",
+          "via": "contract"
+        },
+        {
+          "to": "pg_op_notice",
+          "when": "Public notice",
+          "via": "contract"
+        },
+        {
+          "to": "pg_op_rehearsal",
+          "when": "FWDI rehearsal",
+          "via": "contract"
+        }
+      ]
+    },
+    {
+      "id": "pg_op_symbols",
+      "kind": "page",
+      "name": "Symbols and issuer notices (/operator/symbols)",
+      "lane": "ui",
+      "route": "/operator/symbols",
+      "routeType": "screen",
+      "contract": "Register a symbol (tier, source, issuer-sponsored or third-party); 30-day issuer-notice clock; objection; activation; symbol-cap counts.",
+      "roles": [
+        "operator"
+      ],
+      "links": [
+        {
+          "to": "pg_op_overview",
+          "when": "Overview",
+          "via": "contract"
+        }
+      ],
+      "variants": [
+        {
+          "id": "notice_running",
+          "name": "Notice clock running"
+        },
+        {
+          "id": "objected",
+          "name": "Issuer objected"
+        },
+        {
+          "id": "active",
+          "name": "Active"
+        }
+      ]
+    },
+    {
+      "id": "pg_op_halts",
+      "kind": "page",
+      "name": "Halts and latency (/operator/halts)",
+      "lane": "ui",
+      "route": "/operator/halts",
+      "routeType": "screen",
+      "contract": "Relay health, heartbeat age, halt/resume ledger with feed, detection and enforcement times.",
+      "roles": [
+        "operator"
+      ],
+      "links": [
+        {
+          "to": "pg_op_overview",
+          "when": "Overview",
+          "via": "contract"
+        }
+      ],
+      "variants": [
+        {
+          "id": "healthy",
+          "name": "Healthy"
+        },
+        {
+          "id": "stale",
+          "name": "Stale: failing closed"
+        }
+      ]
+    },
+    {
+      "id": "pg_op_participants",
+      "kind": "page",
+      "name": "Participants (/operator/participants)",
+      "lane": "ui",
+      "route": "/operator/participants",
+      "routeType": "screen",
+      "contract": "Issued credentials, expiry, revoke, screening log.",
+      "roles": [
+        "operator"
+      ],
+      "links": [
+        {
+          "to": "pg_op_overview",
+          "when": "Overview",
+          "via": "contract"
+        }
+      ]
+    },
+    {
+      "id": "pg_op_notice",
+      "kind": "page",
+      "name": "Public notice builder (/operator/public-notice)",
+      "lane": "ui",
+      "route": "/operator/public-notice",
+      "routeType": "screen",
+      "contract": "Draft of the order's 30 required notice items (a\u2013dd); chain-read facts filled (program upgrade authority and who can pause or override, relay/admin/data/credential keys, pool and vault addresses, fees, token authorities); operator-input items flagged; publish date with the 30-day operating countdown (earliest start 2026-10-17 if published today); revision reminders (5 business days, 20 days before material change, quarterly).",
+      "roles": [
+        "operator"
+      ],
+      "links": [
+        {
+          "to": "pg_op_overview",
+          "when": "Overview",
+          "via": "contract"
+        }
+      ],
+      "variants": [
+        {
+          "id": "draft",
+          "name": "Draft"
+        },
+        {
+          "id": "published",
+          "name": "Published: countdown"
+        }
+      ]
+    },
+    {
+      "id": "pg_op_rehearsal",
+      "kind": "page",
+      "name": "FWDI launch rehearsal (/operator/rehearsal/fwdi)",
+      "lane": "ui",
+      "route": "/operator/rehearsal/fwdi",
+      "routeType": "screen",
+      "contract": "Real mainnet FWDI: authority map, allowlist design, its markets (the Manifest order book's frozen vault explained), on-chain activity, Tier-2 daily share budget (tier inferred), halt audit.",
+      "roles": [
+        "operator"
+      ],
+      "links": [
+        {
+          "to": "pg_op_overview",
+          "when": "Overview",
+          "via": "contract"
+        }
+      ],
+      "variants": [
+        {
+          "id": "loading",
+          "name": "Reading mainnet"
+        },
+        {
+          "id": "ready",
+          "name": "Report ready"
+        }
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "blk_program_core",
+      "title": "Venue program core: permissioned pool, credential gate, LP positions, tape events",
+      "userValue": "Only an admitted wallet can trade or provide liquidity, and every trade leaves a tape-grade on-chain record.",
+      "lane": "logic",
+      "surfaceIds": [
+        "ct_venue"
+      ],
+      "dependsOn": [],
+      "owns": [
+        "programs/venue/**",
+        "scripts/size-check.sh"
+      ],
+      "technical": {
+        "approach": "Pinocchio no_std program. PDAs: VenueConfig, SymbolRecord, Pool, LpPosition. Constant-product pool (x\u00b7y=k, fee in bps) between a Token-2022 stock mint and classic SPL USDC via transfer_checked CPIs; vaults owned by the pool PDA (the stock vault is thawed by the stock's freeze authority). Credential gate verifies a Solana Attestation Service attestation account (owner = SAS program, PDA derivation, credential and schema match VenueConfig, subject = signer, not expired, not revoked); membership-PDA fallback behind a config flag. LP positions are internal and non-transferable. Each swap emits a sol_log_data event (pair, price, size, time, direction, pool, program). Release profile: opt-level z, lto, codegen-units 1, panic abort, strip.",
+        "touches": [
+          "programs/venue/"
+        ],
+        "dataEntities": [
+          "VenueConfig",
+          "SymbolRecord",
+          "Pool",
+          "LpPosition"
+        ],
+        "integrations": [
+          "Solana Token-2022",
+          "Solana Attestation Service"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "An admitted wallet's swap moves reserves per x\u00b7y=k net of the fee; a wallet with no, expired, revoked or foreign-schema attestation fails with NotAdmitted",
+          "accept": {
+            "cmd": "cargo test --manifest-path programs/venue/Cargo.toml --test gate"
+          }
+        },
+        {
+          "text": "Add and remove liquidity require admission; LP positions have no transfer path; removing more than owned fails",
+          "accept": {
+            "cmd": "cargo test --manifest-path programs/venue/Cargo.toml --test liquidity"
+          }
+        },
+        {
+          "text": "Every successful swap emits exactly one tape event whose fields decode to pair, price, size, time, direction, pool and program id",
+          "accept": {
+            "cmd": "cargo test --manifest-path programs/venue/Cargo.toml --test events"
+          }
+        },
+        {
+          "text": "The release .so builds and its size is reported for the deploy-cost approval",
+          "accept": {
+            "cmd": "bash scripts/size-check.sh"
+          }
+        }
+      ],
+      "proofNote": "An on-chain program has no screen; proof is LiteSVM suites exercising admitted and rejected wallets against the real instruction set, plus the measured .so size used for Gabriel's deploy approval."
+    },
+    {
+      "id": "blk_program_rules",
+      "title": "Venue rules: exchange-synced halts (fail closed), share-volume caps and breaches, symbol caps, issuer-notice activation",
+      "userValue": "A trade in a halted, stale, capped, paused or not-yet-allowed stock is refused by the chain itself, exactly as the order's conditions require.",
+      "lane": "logic",
+      "surfaceIds": [
+        "ct_venue"
+      ],
+      "dependsOn": [
+        "blk_program_core"
+      ],
+      "owns": [
+        "programs/venue/src/rules/**",
+        "programs/venue/tests/halts.rs",
+        "programs/venue/tests/caps.rs",
+        "programs/venue/tests/symbols.rs",
+        "programs/venue/tests/notices.rs",
+        "programs/venue/tests/surface.rs"
+      ],
+      "technical": {
+        "approach": "Halt: relay authority sets/clears a per-symbol halt with the Nasdaq reason code; heartbeat timestamp; swaps and deposits fail when halted or when now \u2212 last_heartbeat > heartbeat_max_age (fail closed); withdrawals stay allowed. Caps: per-symbol trade_date and shares_traded_today; trade-date roll at the configured cutoff (default 04:00 ET business days, per order fn 69 SIP reporting start); swap fails CapReached if the stock-leg share size would exceed the daily share budget (tier % \u00d7 prior-month consolidated ADV; stricter than the order's average-based test) (set by the data authority). Breach ledger: record_breach \u2192 1st = warning state, each later = paused_until now+3 months. Symbol registry refuses a 76th Tier-1 or 251st Tier-2 symbol across the affiliate group. Third-party-tokenized symbols start inactive; activate_pool requires notice_received_at + 30 days \u2264 now and no objection; issuer-sponsored symbols activate directly. No borrow, lend, margin or mint-new-stock instruction exists.",
+        "touches": [
+          "programs/venue/src/rules/"
+        ],
+        "dataEntities": [
+          "SymbolRecord",
+          "VenueConfig"
+        ],
+        "integrations": [
+          "Nasdaq halt data via relay authority"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "Halted symbol: swap and add_liquidity fail TradingHalted, remove_liquidity succeeds; clearing the halt with a fresh heartbeat restores trading",
+          "accept": {
+            "cmd": "cargo test --manifest-path programs/venue/Cargo.toml --test halts"
+          }
+        },
+        {
+          "text": "Heartbeat older than heartbeat_max_age makes swaps fail HaltDataStale even when no halt is set",
+          "accept": {
+            "cmd": "cargo test --manifest-path programs/venue/Cargo.toml --test halts stale"
+          }
+        },
+        {
+          "text": "A swap that would push shares_traded_today past cap_shares fails CapReached; the counter resets at the trade-date cutoff; the 1st recorded breach leaves trading on with a warning, the 2nd pauses the symbol for 3 months and swaps fail Paused until then",
+          "accept": {
+            "cmd": "cargo test --manifest-path programs/venue/Cargo.toml --test caps"
+          }
+        },
+        {
+          "text": "Registering a 76th Tier-1 or 251st Tier-2 symbol fails SymbolCapReached",
+          "accept": {
+            "cmd": "cargo test --manifest-path programs/venue/Cargo.toml --test symbols"
+          }
+        },
+        {
+          "text": "A third-party-tokenized symbol cannot activate before 30 days after the recorded notice receipt or after an objection; an issuer-sponsored symbol activates immediately",
+          "accept": {
+            "cmd": "cargo test --manifest-path programs/venue/Cargo.toml --test notices"
+          }
+        },
+        {
+          "text": "The instruction set contains no borrow, lend, margin or stock-issuance instruction",
+          "accept": {
+            "cmd": "cargo test --manifest-path programs/venue/Cargo.toml --test surface"
+          }
+        }
+      ],
+      "proofNote": "Rules have no screen of their own; proof is the rejection codes asserted in LiteSVM with a controllable clock. The trade page proves the user-visible states in blk_ui_participant."
+    },
+    {
+      "id": "blk_rehearsal_assets",
+      "title": "Rehearsal stock mint mirroring FWDI's design, and USDC per cluster",
+      "userValue": "The mainnet pool trades a stock token that behaves like the real FWDI token (frozen until approved), clearly labelled as a rehearsal asset.",
+      "lane": "logic",
+      "surfaceIds": [],
+      "dependsOn": [],
+      "owns": [
+        "scripts/assets/**",
+        "checks/rehearsal-mint.ts",
+        "config/clusters.ts"
+      ],
+      "technical": {
+        "approach": "Token-2022 mint with DefaultAccountState=Frozen, a venue-controlled freeze authority that thaws admitted wallets and pool vaults, ScaledUiAmount (multiplier 1), MetadataPointer + TokenMetadata naming it a rehearsal asset. Cluster config maps USDC mint per cluster (mainnet real USDC; fork real USDC; devnet test USDC).",
+        "touches": [
+          "scripts/assets/",
+          "config/"
+        ],
+        "dataEntities": [
+          "Pool"
+        ],
+        "integrations": [
+          "Solana Token-2022"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "On the fork, the created mint has DefaultAccountState Frozen, the expected freeze authority, ScaledUiAmount and metadata labelled 'rehearsal'; a fresh account is frozen until thawed",
+          "accept": {
+            "cmd": "npx tsx checks/rehearsal-mint.ts --cluster fork"
+          }
+        }
+      ],
+      "proofNote": "A mint has no screen; proof is the check reading its extensions back from the fork."
+    },
+    {
+      "id": "blk_credentials",
+      "title": "Credential issuer: OFAC screening, SAS test admission, thaw and revoke",
+      "userValue": "An investor gets admitted in one step and can trade; a sanctioned or revoked wallet cannot.",
+      "lane": "logic",
+      "surfaceIds": [
+        "ep_credential"
+      ],
+      "dependsOn": [
+        "blk_program_core",
+        "blk_rehearsal_assets"
+      ],
+      "owns": [
+        "services/credential/**",
+        "checks/credentials.ts"
+      ],
+      "technical": {
+        "approach": "SAS credential + schema owned by the venue issuer. POST /admit screens the wallet against the OFAC SDN digital-currency address list, issues an attestation with expiry, and thaws the wallet's rehearsal-stock account. POST /revoke closes/revokes the attestation. Labelled 'test admission, not KYC'. zod input; errors {error, code?}.",
+        "touches": [
+          "services/credential/"
+        ],
+        "dataEntities": [
+          "VenueConfig"
+        ],
+        "integrations": [
+          "Solana Attestation Service",
+          "OFAC SDN list"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "On the fork: admit \u2192 the wallet's swap succeeds; a wallet on the SDN fixture list is refused admission; revoke \u2192 the next swap fails NotAdmitted",
+          "accept": {
+            "cmd": "npx tsx checks/credentials.ts"
+          }
+        }
+      ],
+      "proofNote": "The admission screen is proven by blk_ui_participant; this block's proof is the fork round-trip."
+    },
+    {
+      "id": "blk_halt_relay",
+      "title": "Halt relay: Nasdaq RSS to on-chain halts, heartbeat and latency ledger",
+      "userValue": "When Nasdaq halts a stock, the venue stops trading it within a measured, displayed delay and never trades on stale halt data.",
+      "lane": "logic",
+      "surfaceIds": [
+        "job_halt_relay"
+      ],
+      "dependsOn": [
+        "blk_program_rules"
+      ],
+      "owns": [
+        "services/relay/**",
+        "checks/halt-relay.ts"
+      ],
+      "technical": {
+        "approach": "Polls https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts at most once a minute (official rule), parses HaltDate/HaltTime (ET)/IssueSymbol/ReasonCode/Resumption fields, maps to registered symbols, sends set_halt/clear_halt and a heartbeat every cycle, and writes feed time, detection time and confirmed-enforcement time per event. NYSE's public halts JSON (nyse.com/api/trade-halts/current) is a cross-check. Participants are notified on halt.",
+        "touches": [
+          "services/relay/"
+        ],
+        "dataEntities": [
+          "HaltLedgerEntry",
+          "SymbolRecord"
+        ],
+        "integrations": [
+          "Nasdaq halt RSS"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "Against a recorded feed fixture: a new LUDP halt for a registered symbol produces set_halt on the fork and the next swap fails TradingHalted; a resumption clears it; the poll interval never drops below 60 s",
+          "accept": {
+            "cmd": "npx tsx checks/halt-relay.ts"
+          }
+        },
+        {
+          "text": "When the relay stops, swaps fail HaltDataStale after heartbeat_max_age",
+          "accept": {
+            "cmd": "npx tsx checks/halt-relay.ts --stale"
+          }
+        }
+      ],
+      "proofNote": "The relay is a background job; its visible proof is the Halts page latency ledger in blk_ui_operator."
+    },
+    {
+      "id": "blk_caps_data",
+      "title": "Volume and tier data: prior-month consolidated ADV in shares \u2192 daily caps",
+      "userValue": "Each stock's daily limit is computed from official consolidated volume and the right tier, with the source shown.",
+      "lane": "logic",
+      "surfaceIds": [
+        "job_caps_data"
+      ],
+      "dependsOn": [
+        "blk_program_rules"
+      ],
+      "owns": [
+        "services/caps/**",
+        "checks/caps-data.ts"
+      ],
+      "technical": {
+        "approach": "Fetches daily bars for the prior calendar month from the keyless Nasdaq.com historical quotes API (api.nasdaq.com/api/quote/<SYM>/historical), cross-checks against Yahoo Finance's chart API, flags a disagreement above 1%, averages share volume over trading days, applies Tier 1 = 0.25% (S&P 500, Russell 1000, eligible ETPs; membership from iShares IVV/IWB holdings CSVs) / Tier 2 = 2.5%, sets the daily share budget on-chain before each trade date, stores provenance, marks 'partial' if a source is missing.",
+        "touches": [
+          "services/caps/"
+        ],
+        "dataEntities": [
+          "SymbolRecord"
+        ],
+        "integrations": [
+          "Nasdaq.com historical quotes (keyless)",
+          "Yahoo Finance chart API (cross-check)",
+          "iShares holdings CSV (Tier 1 membership)"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "From a recorded bars fixture the computed ADV and cap match a hand calculation, the cap is written on the fork, and a missing source yields 'partial' rather than a number",
+          "accept": {
+            "cmd": "npx tsx checks/caps-data.ts"
+          }
+        }
+      ],
+      "proofNote": "Shown on the operator overview cap gauges (blk_ui_operator)."
+    },
+    {
+      "id": "blk_tape",
+      "title": "Tape indexer and venue API",
+      "userValue": "Anyone can see every trade in USD within seconds, with the fields and 30-day history the order requires.",
+      "lane": "logic",
+      "surfaceIds": [
+        "job_tape_indexer",
+        "ep_api"
+      ],
+      "dependsOn": [
+        "blk_program_core"
+      ],
+      "owns": [
+        "services/indexer/**",
+        "services/api/**",
+        "checks/tape.ts"
+      ],
+      "technical": {
+        "approach": "Subscribes to program logs over websocket (public mainnet RPC, Helius optional; backfill by signatures), decodes events, prices the stock leg in USD from the USDC leg, writes prints to SQLite with symbols, price, size, UTC time at the pool, direction, pool and contract address; computes rolling 24-hour pair volume and end-of-day pool size; retains \u226530 days; serves free machine-readable GET /tape plus /symbols, /halts, /venue. zod-validated; errors {error, code?}.",
+        "touches": [
+          "services/indexer/",
+          "services/api/"
+        ],
+        "dataEntities": [
+          "TapePrint"
+        ],
+        "integrations": [
+          "Solana RPC websockets"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "A swap on the fork appears in GET /tape within 10 seconds with symbols, price, size, UTC time, direction, pool and contract address; rolling 24-hour volume and end-of-day pool size are correct",
+          "accept": {
+            "cmd": "npx tsx checks/tape.ts"
+          }
+        }
+      ],
+      "proofNote": "Visible on the public tape page (blk_ui_public)."
+    },
+    {
+      "id": "blk_fwdi_rehearsal",
+      "title": "FWDI launch rehearsal on real mainnet data",
+      "userValue": "An operator sees what listing the real FWDI stock would involve: who controls it, how its allowlist works, why its only market cannot trade yet, and its daily share budget.",
+      "lane": "logic",
+      "surfaceIds": [
+        "job_fwdi_rehearsal"
+      ],
+      "dependsOn": [],
+      "owns": [
+        "services/rehearsal/**",
+        "checks/fwdi-rehearsal.ts"
+      ],
+      "technical": {
+        "approach": "Read-only mainnet: FWDI mint 7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9 authorities and extensions (freeze authority / permanent delegate 2Yq4T3\u2026, mint / metadata / scaled-UI authority CWdsNn\u2026, DefaultAccountState Frozen); market discovery across its token accounts (today the Manifest market BgQciH5noj5SyiuJgEjyibDo4xuRLjBFffXPgVZ8S66A, FWDI vault frozen, 0 balance); on-chain activity over 30 days reported as found; Tier-2 daily share budget = 2.5% \u00d7 prior-month consolidated ADV (tier inferred from Russell 2000 membership, labelled); halt-overlap audit against Nasdaq halt history.",
+        "touches": [
+          "services/rehearsal/"
+        ],
+        "dataEntities": [
+          "TapePrint"
+        ],
+        "integrations": [
+          "Superstate FWDI (read-only)",
+          "Manifest (read-only)"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "Against mainnet: reported authorities and extensions equal the on-chain mint values; every FWDI market found is listed with its vault state; activity and the daily share budget are reported with data sources",
+          "accept": {
+            "cmd": "npx tsx checks/fwdi-rehearsal.ts",
+            "timeout": 300000
+          }
+        }
+      ],
+      "proofNote": "Visible on the FWDI rehearsal page (blk_ui_operator)."
+    },
+    {
+      "id": "blk_notice_builder",
+      "title": "Public-notice builder and issuer-notice tracker",
+      "userValue": "An operator gets a draft of the required public notice with every chain-answerable fact filled in, and a clock for each issuer's objection window.",
+      "lane": "logic",
+      "surfaceIds": [
+        "ep_api"
+      ],
+      "dependsOn": [
+        "blk_program_rules",
+        "blk_fwdi_rehearsal"
+      ],
+      "owns": [
+        "services/notice/**",
+        "checks/notice.ts"
+      ],
+      "technical": {
+        "approach": "Template of the order's 30 required notice items (a\u2013dd, REGULATION.md). Chain facts read live: program id and upgrade authority, admin/relay/data/credential keys, pool and vault addresses, fee bps, heartbeat max age, token authorities of each listed mint. Items the chain cannot answer are flagged 'operator input'. Tracks publish date and a 30-day countdown, material-change reminders, issuer notices (receipt, 30-day deadline, objection) mirrored to activate_pool.",
+        "touches": [
+          "services/notice/"
+        ],
+        "dataEntities": [
+          "PublicNoticeDraft",
+          "IssuerNotice"
+        ],
+        "integrations": [
+          "Solana RPC"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "On the fork: the draft's technology and governance items equal the deployed program's actual upgrade authority and keys and the FWDI mint's actual authorities; every other item is either filled from config or flagged 'operator input'",
+          "accept": {
+            "cmd": "npx tsx checks/notice.ts"
+          }
+        }
+      ],
+      "proofNote": "Visible on the Public notice builder page (blk_ui_operator)."
+    },
+    {
+      "id": "blk_ui_participant",
+      "title": "Participant screens: admission, trade, liquidity",
+      "userValue": "An investor gets admitted, trades, and sees exactly why a trade is refused (halted, stale, capped, paused, not admitted).",
+      "lane": "ui",
+      "surfaceIds": [
+        "pg_onboard",
+        "pg_trade",
+        "pg_liquidity"
+      ],
+      "dependsOn": [
+        "blk_credentials",
+        "blk_tape",
+        "blk_halt_relay",
+        "blk_caps_data"
+      ],
+      "owns": [
+        "web/src/routes/app/**",
+        "tests/e2e/participant.spec.ts"
+      ],
+      "technical": {
+        "approach": "React + ReUI functional screens (no product look tokens until Gabriel's handoff). Wallet adapter; swap and liquidity instructions built client-side; on-chain error codes mapped to plain states.",
+        "touches": [
+          "web/src/routes/app/"
+        ],
+        "dataEntities": [
+          "TapePrint"
+        ],
+        "integrations": [
+          "Solana wallet adapter"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "On the fork: admit \u2192 swap \u2192 print on tape; the halted, stale, capped and not-admitted states each render from a real on-chain rejection",
+          "accept": {
+            "cmd": "npx playwright test tests/e2e/participant.spec.ts",
+            "artifact": "evidence/participant-flow.webm",
+            "timeout": 600000
+          }
+        }
+      ]
+    },
+    {
+      "id": "blk_ui_operator",
+      "title": "Operator workbench screens",
+      "userValue": "An operator runs the venue from one place: symbols, caps, halts, participants, notice and the FWDI rehearsal.",
+      "lane": "ui",
+      "surfaceIds": [
+        "pg_op_overview",
+        "pg_op_symbols",
+        "pg_op_halts",
+        "pg_op_participants",
+        "pg_op_notice",
+        "pg_op_rehearsal"
+      ],
+      "dependsOn": [
+        "blk_notice_builder",
+        "blk_fwdi_rehearsal",
+        "blk_halt_relay",
+        "blk_caps_data",
+        "blk_credentials"
+      ],
+      "owns": [
+        "web/src/routes/operator/**",
+        "tests/e2e/operator.spec.ts"
+      ],
+      "technical": {
+        "approach": "React + ReUI functional screens reading the venue API and chain.",
+        "touches": [
+          "web/src/routes/operator/"
+        ],
+        "dataEntities": [
+          "SymbolRecord",
+          "HaltLedgerEntry",
+          "PublicNoticeDraft",
+          "IssuerNotice"
+        ],
+        "integrations": [
+          "Venue API"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "On the fork: overview shows cap gauges and heartbeat age; a relayed halt appears in the latency ledger; the notice draft shows chain-read authorities; the FWDI rehearsal report renders",
+          "accept": {
+            "cmd": "npx playwright test tests/e2e/operator.spec.ts",
+            "artifact": "evidence/operator-workbench.webm",
+            "timeout": 600000
+          }
+        }
+      ]
+    },
+    {
+      "id": "blk_ui_public",
+      "title": "Public screens: home, tape, proof",
+      "userValue": "Anyone can read the tape and verify what runs where, with explorer links.",
+      "lane": "ui",
+      "surfaceIds": [
+        "pg_home",
+        "pg_tape",
+        "pg_proof"
+      ],
+      "dependsOn": [
+        "blk_tape"
+      ],
+      "owns": [
+        "web/src/routes/public/**",
+        "tests/e2e/public.spec.ts"
+      ],
+      "technical": {
+        "approach": "React + ReUI screens; proof page lists program id, accounts and signatures per environment with explorer links and the real-vs-stand-in table.",
+        "touches": [
+          "web/src/routes/public/"
+        ],
+        "dataEntities": [
+          "TapePrint"
+        ],
+        "integrations": [
+          "Venue API"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "Home, tape (with prints) and proof (with explorer links resolving) render without an account",
+          "accept": {
+            "cmd": "npx playwright test tests/e2e/public.spec.ts",
+            "artifact": "evidence/public-pages.png",
+            "timeout": 300000
+          }
+        }
+      ]
+    },
+    {
+      "id": "blk_fork_env",
+      "title": "Mainnet-fork environment with the real FWDI mint and time travel",
+      "userValue": "The video shows the program running against the real FWDI token, and rules that take weeks play out in seconds.",
+      "lane": "logic",
+      "surfaceIds": [],
+      "dependsOn": [
+        "blk_program_rules",
+        "blk_rehearsal_assets",
+        "blk_credentials"
+      ],
+      "owns": [
+        "scripts/fork/**",
+        "checks/fork-scenario.ts"
+      ],
+      "technical": {
+        "approach": "Surfpool with the mainnet datasource: deploys the program, registers FWDI (real mint, issuer-sponsored) and a third-party demo symbol, thaws demo wallets' FWDI accounts via surfnet_setTokenAccount (labelled as standing in for Superstate's approval), runs a swap on the real FWDI mint, time-travels 30 days to activate the third-party symbol and 3 months to lift a pause. The fork is run locally and recorded; it is never exposed publicly because cheatcodes are callable by any RPC client.",
+        "touches": [
+          "scripts/fork/"
+        ],
+        "dataEntities": [
+          "SymbolRecord",
+          "Pool"
+        ],
+        "integrations": [
+          "Surfpool"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "On a fresh fork: a swap on the real FWDI mint passes all gates; the third-party symbol activates only after a 30-day time travel; a second breach pauses the symbol and trading resumes only after a 3-month time travel",
+          "accept": {
+            "cmd": "npx tsx checks/fork-scenario.ts",
+            "timeout": 600000
+          }
+        }
+      ],
+      "proofNote": "The fork has no screen of its own; proof is the scenario script's assertions and signatures, which the proof page lists."
+    },
+    {
+      "id": "blk_mainnet_deploy",
+      "title": "Mainnet deployment and live smoke",
+      "userValue": "The venue is live on Solana mainnet and anyone can verify real admitted, rejected, halted and capped transactions.",
+      "lane": "logic",
+      "surfaceIds": [],
+      "dependsOn": [
+        "blk_program_rules",
+        "blk_rehearsal_assets",
+        "blk_credentials",
+        "blk_halt_relay",
+        "blk_caps_data",
+        "blk_tape"
+      ],
+      "owns": [
+        "scripts/deploy/**",
+        "checks/mainnet-smoke.ts",
+        "evidence/mainnet-proof.json"
+      ],
+      "technical": {
+        "approach": "Only after Gabriel approves the exact SOL amount from the measured .so size: deploy (first deploy needs ~1x program rent up front; --max-len defaults to the exact size), init venue, create the rehearsal mint and a stock/USDC pool seeded with ~$2\u20133 USDC, start relay/data/indexer against mainnet. Smoke records signatures: admitted swap, NotAdmitted rejection (simulated), a CapReached rejection on a small test cap, and a TradingHalted rejection from a relayed halt when one occurs. Rent reclaimed after judging with solana program close.",
+        "touches": [
+          "scripts/deploy/"
+        ],
+        "dataEntities": [
+          "VenueConfig",
+          "Pool"
+        ],
+        "integrations": [
+          "Solana mainnet"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "Mainnet: the program id is executable, an admitted swap confirms, and the rejection cases return the expected program errors; signatures are written to evidence/mainnet-proof.json",
+          "accept": {
+            "cmd": "npx tsx checks/mainnet-smoke.ts",
+            "timeout": 600000
+          }
+        }
+      ],
+      "proofNote": "Proof is on-chain: signatures and explorer links in evidence/mainnet-proof.json, rendered on the proof page.",
+      "stage": "ship",
+      "approval": "required"
+    },
+    {
+      "id": "blk_web_deploy",
+      "title": "Public web deployment",
+      "userValue": "Judges open one URL and use the product without installing anything.",
+      "lane": "logic",
+      "surfaceIds": [],
+      "dependsOn": [
+        "blk_ui_participant",
+        "blk_ui_operator",
+        "blk_ui_public"
+      ],
+      "owns": [
+        "deploy/**",
+        "checks/public-url.ts"
+      ],
+      "technical": {
+        "approach": "Deploy the web app and services to the target Gabriel names (Cloudflare suggested; cloudflared from this machine as fallback). No auto-deploy.",
+        "touches": [
+          "deploy/"
+        ],
+        "dataEntities": [],
+        "integrations": [
+          "Hosting (Gabriel names the target)"
+        ]
+      },
+      "requirements": [
+        {
+          "text": "The public URL serves /, /tape, /app/trade/<symbol>, /operator and /proof with HTTP 200 and live data",
+          "accept": {
+            "cmd": "npx tsx checks/public-url.ts"
+          }
+        }
+      ],
+      "proofNote": "Proof is the public URL itself, checked from outside.",
+      "stage": "ship",
+      "approval": "required"
+    }
+  ],
+  "done": [
+    {
+      "id": "done_mainnet_proof",
+      "condition": "Mainnet evidence exists and is linked on /proof: executable program id, \u22651 admitted swap, \u22651 NotAdmitted rejection, \u22651 CapReached rejection, and a TradingHalted rejection from a relayed real Nasdaq halt (or, if no mapped halt occurs in time, the fork's relayed-halt evidence labelled as such)",
+      "why": "Every block can pass on the fork; only this proves the product is live on mainnet as Gabriel asked",
+      "blocks": [
+        "blk_mainnet_deploy",
+        "blk_ui_public"
+      ]
+    },
+    {
+      "id": "done_public_url",
+      "condition": "A stranger can open the public URL, read the tape, get admitted and attempt a trade",
+      "why": "Passing locally is not passing in production",
+      "blocks": [
+        "blk_web_deploy"
+      ]
+    },
+    {
+      "id": "done_submission",
+      "condition": "The Stocklana submission carries the GitHub repo, the live URL and a \u22643-minute video before 19:30 UTC",
+      "why": "A finished build that is not submitted earns nothing",
+      "blocks": [
+        "blk_web_deploy"
+      ]
+    }
+  ],
+  "preflight": [
+    {
+      "id": "pf_sbf",
+      "need": "Agave/Solana CLI with cargo-build-sbf",
+      "why": "Builds and deploys the Pinocchio program",
+      "blocks": [
+        "blk_program_core",
+        "blk_mainnet_deploy"
+      ],
+      "howToGet": "Installed via release.anza.xyz stable installer",
+      "selfServable": true,
+      "status": "have",
+      "smoke": {
+        "cmd": "export PATH=\"$HOME/.local/share/solana/install/active_release/bin:$PATH\"; cargo build-sbf --version && solana --version",
+        "proves": "The SBF toolchain and CLI run on this machine"
+      },
+      "verifiedBy": {
+        "cmd": "export PATH=\"$HOME/.local/share/solana/install/active_release/bin:$PATH\"; cargo build-sbf --version && solana --version",
+        "exitCode": 0,
+        "at": 1790322208003,
+        "of": "fnv1a64:d785eeebd62ace92"
+      },
+      "note": "solana-cli 4.2.2, cargo-build-sbf 4.1.0, platform-tools v1.54 (installed 06:05 UTC)"
+    },
+    {
+      "id": "pf_surfpool",
+      "need": "Surfpool mainnet-fork validator",
+      "why": "Real FWDI mint and time travel on a fork",
+      "blocks": [
+        "blk_fork_env",
+        "blk_credentials",
+        "blk_halt_relay"
+      ],
+      "howToGet": "curl -sL https://run.surfpool.run/ | bash",
+      "selfServable": true,
+      "status": "have",
+      "smoke": {
+        "cmd": "\"$HOME/.local/bin/surfpool\" --version",
+        "proves": "Surfpool is installed and runs"
+      },
+      "verifiedBy": {
+        "cmd": "\"$HOME/.local/bin/surfpool\" --version",
+        "exitCode": 0,
+        "at": 1790322208140,
+        "of": "fnv1a64:50f2888ad7831e13"
+      },
+      "note": "surfpool 1.6.0"
+    },
+    {
+      "id": "pf_rpc",
+      "need": "Mainnet RPC",
+      "why": "FWDI reads, indexer, deploy",
+      "blocks": [
+        "blk_tape",
+        "blk_fwdi_rehearsal",
+        "blk_mainnet_deploy"
+      ],
+      "howToGet": "Public api.mainnet-beta.solana.com; a free Helius key only if rate limits bite",
+      "selfServable": true,
+      "status": "have",
+      "smoke": {
+        "cmd": "curl -s -X POST https://api.mainnet-beta.solana.com -H 'content-type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getSlot\"}' | grep -q '\"result\"'",
+        "proves": "The public mainnet RPC answers a live getSlot"
+      },
+      "verifiedBy": {
+        "cmd": "curl -s -X POST https://api.mainnet-beta.solana.com -H 'content-type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getSlot\"}' | grep -q '\"result\"'",
+        "exitCode": 0,
+        "at": 1790322208181,
+        "of": "fnv1a64:aa9904da6f0112df"
+      }
+    },
+    {
+      "id": "pf_volume_data",
+      "need": "Keyless consolidated daily share volume",
+      "why": "Prior-month ADV for the daily share budget",
+      "blocks": [
+        "blk_caps_data",
+        "blk_fwdi_rehearsal"
+      ],
+      "howToGet": "Nasdaq.com historical quotes API + Yahoo chart API (no account)",
+      "selfServable": true,
+      "status": "have",
+      "smoke": {
+        "cmd": "python3 -c \"import json,urllib.request as u;h={'User-Agent':'Mozilla/5.0','Accept':'application/json'};n=json.load(u.urlopen(u.Request('https://api.nasdaq.com/api/quote/FWDI/historical?assetclass=stocks&fromdate=2026-08-01&todate=2026-08-31&limit=40',headers=h),timeout=20))['data']['tradesTable']['rows'];a=sum(int(r['volume'].replace(',',''))for r in n)/len(n);y=json.load(u.urlopen(u.Request('https://query1.finance.yahoo.com/v8/finance/chart/FWDI?period1=1785542400&period2=1788220800&interval=1d',headers=h),timeout=20))['chart']['result'][0]['indicators']['quote'][0]['volume'];v=[x for x in y if x];b=sum(v)/len(v);assert len(n)>=15 and len(v)>=15 and abs(a-b)/a<0.01,(a,b)\"",
+        "proves": "Both sources return August 2026 FWDI daily volume for \u226515 days and agree within 1%"
+      },
+      "verifiedBy": {
+        "cmd": "python3 -c \"import json,urllib.request as u;h={'User-Agent':'Mozilla/5.0','Accept':'application/json'};n=json.load(u.urlopen(u.Request('https://api.nasdaq.com/api/quote/FWDI/historical?assetclass=stocks&fromdate=2026-08-01&todate=2026-08-31&limit=40',headers=h),timeout=20))['data']['tradesTable']['rows'];a=sum(int(r['volume'].replace(',',''))for r in n)/len(n);y=json.load(u.urlopen(u.Request('https://query1.finance.yahoo.com/v8/finance/chart/FWDI?period1=1785542400&period2=1788220800&interval=1d',headers=h),timeout=20))['chart']['result'][0]['indicators']['quote'][0]['volume'];v=[x for x in y if x];b=sum(v)/len(v);assert len(n)>=15 and len(v)>=15 and abs(a-b)/a<0.01,(a,b)\"",
+        "exitCode": 0,
+        "at": 1790322208319,
+        "of": "fnv1a64:863ad3341b0da8eb"
+      },
+      "note": "Aug 2026 FWDI ADV: 1,668,416 (Nasdaq) vs 1,667,966 (Yahoo)"
+    },
+    {
+      "id": "pf_hosting",
+      "need": "Cloudflare deploy access (Workers + Pages)",
+      "why": "Public app, halt relay cron and tape storage",
+      "blocks": [
+        "blk_web_deploy",
+        "blk_halt_relay",
+        "blk_tape"
+      ],
+      "howToGet": "Vault CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID (inject.sh get); Gabriel confirmed \"Cloudflare OK\"",
+      "selfServable": true,
+      "status": "have",
+      "smoke": {
+        "cmd": "curl -sf -H \"Authorization: Bearer $CLOUDFLARE_API_TOKEN\" \"https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts\" | grep -Eq '\"success\": ?true' && curl -sf -H \"Authorization: Bearer $CLOUDFLARE_API_TOKEN\" \"https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects\" | grep -Eq '\"success\": ?true'",
+        "proves": "The vault token lists Workers scripts and Pages projects on account 893c47cc\u2026"
+      },
+      "verifiedBy": {
+        "cmd": "curl -sf -H \"Authorization: Bearer $CLOUDFLARE_API_TOKEN\" \"https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts\" | grep -Eq '\"success\": ?true' && curl -sf -H \"Authorization: Bearer $CLOUDFLARE_API_TOKEN\" \"https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects\" | grep -Eq '\"success\": ?true'",
+        "exitCode": 0,
+        "at": 1790322298428,
+        "of": "fnv1a64:e34ecec3ebc267c8"
+      },
+      "note": "Token has Workers + Pages but not D1/KV (auth 10000); storage uses a SQLite-backed Durable Object instead. Wrangler OAuth lacks these scopes too."
+    },
+    {
+      "id": "pf_sas",
+      "need": "Solana Attestation Service program on mainnet and devnet",
+      "why": "Participant credentials verified in the swap",
+      "blocks": [
+        "blk_credentials",
+        "blk_program_core"
+      ],
+      "howToGet": "Program 22zoJMtdu4tQc2PzL74ZUT7FrwgB1Udec8DdW4yw4BdG",
+      "selfServable": true,
+      "status": "have",
+      "smoke": {
+        "cmd": "for u in https://api.mainnet-beta.solana.com https://api.devnet.solana.com; do curl -s -X POST $u -H 'content-type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getAccountInfo\",\"params\":[\"22zoJMtdu4tQc2PzL74ZUT7FrwgB1Udec8DdW4yw4BdG\",{\"encoding\":\"base64\"}]}' | grep -q '\"executable\":true' || exit 1; done",
+        "proves": "The SAS program account is executable on both clusters"
+      },
+      "verifiedBy": {
+        "cmd": "for u in https://api.mainnet-beta.solana.com https://api.devnet.solana.com; do curl -s -X POST $u -H 'content-type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getAccountInfo\",\"params\":[\"22zoJMtdu4tQc2PzL74ZUT7FrwgB1Udec8DdW4yw4BdG\",{\"encoding\":\"base64\"}]}' | grep -q '\"executable\":true' || exit 1; done",
+        "exitCode": 0,
+        "at": 1790322217161,
+        "of": "fnv1a64:d01a39e25ad5682b"
+      }
+    },
+    {
+      "id": "pf_halt_feed",
+      "need": "Nasdaq trade-halts RSS",
+      "why": "Halt and resume events",
+      "blocks": [
+        "blk_halt_relay"
+      ],
+      "howToGet": "https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts (poll \u2264 once a minute)",
+      "selfServable": true,
+      "status": "have",
+      "smoke": {
+        "cmd": "curl -s -m 20 -A 'Mozilla/5.0' 'https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts' | grep -q '<ndaq:IssueSymbol>'",
+        "proves": "The live feed returns halt items with IssueSymbol"
+      },
+      "verifiedBy": {
+        "cmd": "curl -s -m 20 -A 'Mozilla/5.0' 'https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts' | grep -q '<ndaq:IssueSymbol>'",
+        "exitCode": 0,
+        "at": 1790322217535,
+        "of": "fnv1a64:f79af79c3fd4dd66"
+      }
+    },
+    {
+      "id": "pf_github",
+      "need": "GitHub account for the public repo",
+      "why": "Submission needs a repo link",
+      "blocks": [
+        "blk_web_deploy"
+      ],
+      "howToGet": "gh CLI authenticated as gabrielantonyxaviour (Gabriel named this account)",
+      "selfServable": true,
+      "status": "have",
+      "smoke": {
+        "cmd": "gh api user -q .login | grep -qx gabrielantonyxaviour",
+        "proves": "gh is authenticated as gabrielantonyxaviour"
+      },
+      "verifiedBy": {
+        "cmd": "gh api user -q .login | grep -qx gabrielantonyxaviour",
+        "exitCode": 0,
+        "at": 1790322218650,
+        "of": "fnv1a64:c5075e62dac940f5"
+      }
+    },
+    {
+      "id": "pf_devnet_sol",
+      "need": "Devnet SOL for the fallback deployment (~0.6 SOL)",
+      "why": "Public devnet fallback if mainnet is not funded in time",
+      "blocks": [],
+      "howToGet": "devnet-pow proof-of-work faucet mining to deployer CXMB67kJoMrYNKLyQNHc1nXMWW6DbubmxxSQZ7UfsgZq (running); CLI airdrop is rate-limited; faucet.solana.com asks agents not to use it",
+      "selfServable": true,
+      "status": "missing",
+      "smoke": {
+        "cmd": "export PATH=\"$HOME/.local/share/solana/install/active_release/bin:$PATH\"; solana balance -u devnet -k \"$HOME/.config/solana/bellwether-deployer.json\" | awk '{exit !($1>=1)}'",
+        "proves": "The deployer holds at least 1 devnet SOL"
+      },
+      "note": "Optional fallback, not required for plan: mainnet + recorded fork are the primary environments. Gabriel may fund it faster from faucet.solana.com with his GitHub."
+    },
+    {
+      "id": "pf_mainnet_funds",
+      "need": "Deployer funded on mainnet with the approved amount",
+      "why": "Program rent (~1x, 5,080 lamports/byte), accounts, fees and ~$3 USDC pool seed",
+      "blocks": [
+        "blk_mainnet_deploy"
+      ],
+      "howToGet": "After the .so size is measured, Gabriel sends the exact SOL amount and ~3 USDC to deployer CXMB67kJoMrYNKLyQNHc1nXMWW6DbubmxxSQZ7UfsgZq (budget \u2264 $30)",
+      "selfServable": false,
+      "status": "needs_gabriel",
+      "smoke": {
+        "cmd": "export PATH=\"$HOME/.local/share/solana/install/active_release/bin:$PATH\"; solana balance -u mainnet-beta CXMB67kJoMrYNKLyQNHc1nXMWW6DbubmxxSQZ7UfsgZq | awk '{exit !($1>=0.15)}'",
+        "proves": "The deployer holds at least 0.15 SOL on mainnet"
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "sc_participant_trade",
+      "featureId": "blk_ui_participant",
+      "name": "Get admitted and trade",
+      "roles": [
+        "participant"
+      ],
+      "startingState": "Venue initialised on the target cluster with the rehearsal stock pool active, funded and not halted; relay heartbeat fresh; the participant's wallet holds USDC and has no credential.",
+      "actions": [
+        "Open /app/onboard and connect the wallet",
+        "Request admission: the wallet is screened against the OFAC SDN address list and a test-admission attestation is issued; the rehearsal-stock account is thawed",
+        "Open /app/trade/<symbol> and swap USDC for the rehearsal stock",
+        "Open /tape",
+        "Failure: a wallet on the SDN fixture list is refused admission",
+        "Failure: a wallet without a credential attempts a swap and the program rejects it with NotAdmitted"
+      ],
+      "expectedVisible": "Admitted state with credential expiry; swap confirmation with signature; the trade appears on the public tape within seconds; refused and NotAdmitted states explain the reason in plain words.",
+      "expectedData": "An SAS attestation for the wallet; pool reserves moved per x\u00b7y=k net of fee; shares_traded_today increased by the swap's share size; one tape print with symbols, price, size, UTC time, direction, pool and program."
+    },
+    {
+      "id": "sc_halt_sync",
+      "featureId": "blk_halt_relay",
+      "name": "A Nasdaq halt stops trading, fails closed on stale data, and resumes",
+      "roles": [
+        "participant",
+        "operator"
+      ],
+      "startingState": "Admitted participant; symbol mapped to a real Nasdaq symbol for the relay; relay running.",
+      "actions": [
+        "The relay reads a halt for the mapped symbol from the Nasdaq feed and sets the on-chain halt",
+        "Participant attempts a swap",
+        "Operator opens /operator/halts",
+        "Relay reads the resumption and clears the halt; participant swaps again",
+        "Failure: the relay stops; after the heartbeat max age the next swap fails with HaltDataStale"
+      ],
+      "expectedVisible": "Trade page shows 'Halted by Nasdaq' with reason code and measured latency; operator latency ledger shows feed, detection and enforcement times; stale state shows 'Halt data stale: trading paused'.",
+      "expectedData": "Halt ledger row with feed/detection/confirmation timestamps; TradingHalted and HaltDataStale rejections; halt cleared on resumption."
+    },
+    {
+      "id": "sc_volume_cap",
+      "featureId": "blk_program_rules",
+      "name": "Daily share budget, breach and 3-month pause",
+      "roles": [
+        "participant",
+        "operator"
+      ],
+      "startingState": "Symbol with a known prior-month ADV and a small test budget set by the data job; admitted participant.",
+      "actions": [
+        "Participant swaps until the next swap would exceed the daily share budget",
+        "Operator views cap usage on /operator",
+        "On the fork: record a first breach, then a second breach",
+        "Time-travel three months and swap again"
+      ],
+      "expectedVisible": "Trade page shows 'Daily cap reached'; operator gauge at 100% with source provenance; after the second breach the symbol shows '3-month pause' until the time-travelled date.",
+      "expectedData": "CapReached rejection; breach_count 1 then 2; paused_until = now + 3 months; swaps fail Paused until then and succeed after."
+    },
+    {
+      "id": "sc_liquidity",
+      "featureId": "blk_program_core",
+      "name": "Covered Firm provides and withdraws liquidity",
+      "roles": [
+        "covered_firm"
+      ],
+      "startingState": "Credentialed liquidity-provider wallet holding rehearsal stock and USDC.",
+      "actions": [
+        "Open /app/liquidity/<symbol> and add liquidity",
+        "Symbol gets halted",
+        "Attempt to add more liquidity",
+        "Withdraw liquidity"
+      ],
+      "expectedVisible": "Position shown as non-transferable; halted state reads 'Halted: withdraw only'.",
+      "expectedData": "LpPosition shares minted internally; add_liquidity rejected while halted; remove_liquidity succeeds while halted."
+    },
+    {
+      "id": "sc_operator_launch",
+      "featureId": "blk_ui_operator",
+      "name": "Operator prepares a launch",
+      "roles": [
+        "operator"
+      ],
+      "startingState": "Operator admin wallet connected; venue initialised; no public notice published.",
+      "actions": [
+        "Open /operator overview",
+        "Register a third-party-tokenized demo symbol on /operator/symbols and record the issuer notice receipt",
+        "Attempt to activate its pool before 30 days",
+        "Record an objection on a second demo symbol",
+        "On the fork: time-travel 30 days and activate the first pool",
+        "Issue and revoke a participant credential on /operator/participants",
+        "Open /operator/public-notice and review chain-filled items",
+        "Open /operator/rehearsal/fwdi"
+      ],
+      "expectedVisible": "Notice clock counting down; activation refused before 30 days; objected symbol blocked with an amend-notice reminder; the notice draft lists the program's real upgrade authority and keys and flags operator-input items; the FWDI report shows its real authorities, its frozen Manifest market and the Tier-2 daily share budget (tier inferred).",
+      "expectedData": "activate_pool rejected before notice_received_at + 30 days and after objection; succeeds after time travel; credential revoke closes the attestation; notice draft facts equal on-chain values."
+    },
+    {
+      "id": "sc_public_verify",
+      "featureId": "blk_ui_public",
+      "name": "Anyone verifies what runs where",
+      "roles": [
+        "public"
+      ],
+      "startingState": "Mainnet deployment live with smoke transactions recorded.",
+      "actions": [
+        "Open /",
+        "Open /tape",
+        "Open /proof and follow explorer links"
+      ],
+      "expectedVisible": "Home states what Bellwether is and links to trade, tape and proof; tape lists prints; proof lists program id, accounts and signatures with working explorer links and the real-vs-stand-in table.",
+      "expectedData": "Explorer links resolve to the recorded mainnet signatures and executable program id."
+    }
+  ]
+}

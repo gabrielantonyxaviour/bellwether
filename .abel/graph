@@ -1,0 +1,4 @@
+#!/bin/sh
+# Keep the product checkout as cwd for attached session tracking.
+cd '/Users/gabrielantonyxaviour/Documents/products/bellwether' || exit 1
+exec node --import '/Users/gabrielantonyxaviour/Documents/products/abel/node_modules/tsx/dist/loader.mjs' '/Users/gabrielantonyxaviour/Documents/products/abel/scripts/graph/cli.ts' "$@"
