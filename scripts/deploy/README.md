@@ -54,8 +54,8 @@ launchctl print gui/$(id -u)/com.bellwether.tunnel
 cat ~/Library/Logs/bellwether/devnet-pids.json
 ```
 
-`com.bellwether.devnet` starts relay, indexer, venue API and credential issuer with the real
-`node_modules/tsx/dist/cli.mjs` Node entry, and runs caps daily at 07:30 UTC. The supervisor
+`com.bellwether.devnet` starts a direct Node supervisor; each service runs with the real
+`node node_modules/tsx/dist/cli.mjs` entry, and caps runs daily at 07:30 UTC. The supervisor
 records its own PID and child PIDs in `devnet-pids.json`; launchd keeps it alive. It also holds
 an AC-power sleep assertion for its own lifetime. Keep the Mac plugged in, awake and online with
 its lid open. `com.bellwether.tunnel` keeps the named `bellwether-devnet` Cloudflare tunnel

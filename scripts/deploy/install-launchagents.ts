@@ -21,16 +21,25 @@ chmodSync(tunnelConfig, 0o600)
 execFileSync("/opt/homebrew/bin/cloudflared", ["--config", tunnelConfig, "tunnel", "ingress", "validate"], { stdio: "inherit" })
 
 const escape = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
-function plist(label: string, args: string[]) {
+async function plist(label: string, args: string[]) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict>\n<key>Label</key><string>${label}</string>\n<key>ProgramArguments</key><array>${args.map((arg) => `<string>${escape(arg)}</string>`).join("")}</array>\n<key>WorkingDirectory</key><string>${escape(root)}</string>\n<key>RunAtLoad</key><true/>\n<key>KeepAlive</key><true/>\n<key>StandardOutPath</key><string>${logs}/${label}.out.log</string>\n<key>StandardErrorPath</key><string>${logs}/${label}.err.log</string>\n</dict></plist>\n`
   const file = join(agents, `${label}.plist`)
   writeFileSync(file, xml, { mode: 0o600 })
   const service = `gui/${uid}/${label}`
   try { execFileSync("launchctl", ["bootout", service], { stdio: "ignore" }) } catch { /* absent */ }
-  execFileSync("launchctl", ["bootstrap", `gui/${uid}`, file], { stdio: "inherit" })
+  let loaded = false
+  for (const delay of [0, 300, 1_000, 2_000]) {
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay))
+    try {
+      execFileSync("launchctl", ["bootstrap", `gui/${uid}`, file], { stdio: "ignore" })
+      loaded = true
+      break
+    } catch { /* launchd may still be removing the prior job */ }
+  }
+  if (!loaded) throw new Error(`launchctl could not bootstrap ${label} from ${file}`)
   execFileSync("launchctl", ["enable", service], { stdio: "inherit" })
   process.stdout.write(`${label}: ${file}\n`)
 }
 
-plist("com.bellwether.devnet", [process.execPath, resolve(root, "node_modules/tsx/dist/cli.mjs"), resolve(root, "scripts/deploy/run-devnet.ts")])
-plist("com.bellwether.tunnel", ["/opt/homebrew/bin/cloudflared", "--config", tunnelConfig, "tunnel", "run", "bellwether-devnet"])
+await plist("com.bellwether.devnet", [process.execPath, resolve(root, "scripts/deploy/run-devnet.mjs")])
+await plist("com.bellwether.tunnel", ["/opt/homebrew/bin/cloudflared", "--config", tunnelConfig, "tunnel", "run", "bellwether-devnet"])

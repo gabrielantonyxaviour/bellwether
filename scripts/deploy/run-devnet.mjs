@@ -1,12 +1,12 @@
-/** Supervise the four live services and the daily caps job under launchd. */
-import { spawn, type ChildProcess } from "node:child_process"
+/** Supervise the four live services and daily caps job under launchd. */
+import { spawn } from "node:child_process"
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join, resolve } from "node:path"
 
 const root = resolve(import.meta.dirname, "../..")
 process.chdir(root)
-const env: NodeJS.ProcessEnv = { ...process.env }
+const env = { ...process.env }
 for (const line of readFileSync("services/.env.devnet", "utf8").split("\n")) {
   if (!line || line.startsWith("#")) continue
   const delimiter = line.indexOf("=")
@@ -15,13 +15,13 @@ for (const line of readFileSync("services/.env.devnet", "utf8").split("\n")) {
 }
 env.CREDENTIAL_CORS_ORIGIN = "https://bellwether.larinova.com,http://localhost:5173,http://127.0.0.1:5173"
 
-const logDir = join(homedir(), "Library/Logs/bellwether")
-mkdirSync(logDir, { recursive: true, mode: 0o700 })
-const pidFile = join(logDir, "devnet-pids.json")
-const services = new Map<string, ChildProcess>()
+const logs = join(homedir(), "Library/Logs/bellwether")
+mkdirSync(logs, { recursive: true, mode: 0o700 })
+const pidFile = join(logs, "devnet-pids.json")
+const services = new Map()
 const awake = spawn("/usr/bin/caffeinate", ["-s", "-w", String(process.pid)], { stdio: "ignore" })
-let caps: ChildProcess | null = null
-let timer: NodeJS.Timeout | null = null
+let caps = null
+let timer = null
 let stopping = false
 
 function record() {
@@ -31,7 +31,7 @@ function record() {
   chmodSync(pidFile, 0o600)
 }
 
-function start(name: string, entry: string): ChildProcess {
+function start(name, entry) {
   const child = spawn(process.execPath, [resolve("node_modules/tsx/dist/cli.mjs"), entry], {
     cwd: root, env, stdio: "inherit", detached: true,
   })
@@ -40,18 +40,25 @@ function start(name: string, entry: string): ChildProcess {
   return child
 }
 
-function stop(code: number) {
+function terminateGroup(child) {
+  if (child?.exitCode !== null && child?.exitCode !== undefined) return
+  if (!child?.pid) return
+  try { process.kill(-child.pid, "SIGTERM") }
+  catch (error) { if (error.code !== "ESRCH") throw error }
+}
+
+function stop(code) {
   if (stopping) return
   stopping = true
   if (timer) clearTimeout(timer)
   if (awake.exitCode === null) awake.kill("SIGTERM")
-  for (const child of services.values()) if (child.exitCode === null && child.pid) process.kill(-child.pid, "SIGTERM")
-  if (caps?.exitCode === null && caps?.pid) process.kill(-caps.pid, "SIGTERM")
+  for (const child of services.values()) terminateGroup(child)
+  terminateGroup(caps)
   record()
   setTimeout(() => process.exit(code), 3_000).unref()
 }
 
-function nextCapsDelay(): number {
+function nextCapsDelay() {
   const now = new Date()
   const next = new Date(now)
   next.setUTCHours(7, 30, 0, 0)
