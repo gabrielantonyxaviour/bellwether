@@ -1,0 +1,1020 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-25T09:01:43.893Z",
+  "symbol": "FWDI",
+  "mint": {
+    "address": "7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9",
+    "symbol": "FWDI",
+    "name": "Forward Industries, Inc.",
+    "tokenProgram": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+    "decimals": 6,
+    "supplyRaw": "7280819100000",
+    "supplyShares": 7280819.1,
+    "space": 512,
+    "mintAuthority": "CWdsNnEuCYzxBjjd9dxvhYuatVHY2cGsMNNJcKsGFSqq",
+    "freezeAuthority": "2Yq4T3mPNfjtEyTxSbRjRKqLf1pwbTasuCQrWe6QpM7x",
+    "permanentDelegate": "2Yq4T3mPNfjtEyTxSbRjRKqLf1pwbTasuCQrWe6QpM7x",
+    "defaultAccountState": "frozen",
+    "metadataPointer": {
+      "authority": "CWdsNnEuCYzxBjjd9dxvhYuatVHY2cGsMNNJcKsGFSqq",
+      "metadataAddress": "7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9"
+    },
+    "scaledUiAmount": {
+      "authority": "CWdsNnEuCYzxBjjd9dxvhYuatVHY2cGsMNNJcKsGFSqq",
+      "multiplier": 1,
+      "newMultiplier": 1,
+      "newMultiplierEffectiveTimestamp": 0
+    },
+    "metadata": {
+      "updateAuthority": "CWdsNnEuCYzxBjjd9dxvhYuatVHY2cGsMNNJcKsGFSqq",
+      "name": "Forward Industries, Inc.",
+      "symbol": "FWDI",
+      "uri": "https://api.superstate.com/v1/instruments/8/solana/token-metadata"
+    },
+    "extensions": [
+      "defaultAccountState",
+      "permanentDelegate",
+      "metadataPointer",
+      "scaledUiAmountConfig",
+      "tokenMetadata"
+    ],
+    "hasPausable": false,
+    "hasTransferHook": false,
+    "authorityMap": [
+      {
+        "address": "CWdsNnEuCYzxBjjd9dxvhYuatVHY2cGsMNNJcKsGFSqq",
+        "roles": [
+          "mint authority",
+          "metadata pointer authority",
+          "metadata update authority",
+          "scaled-UI authority"
+        ],
+        "powers": [
+          "mints new tokens (issuance)",
+          "can repoint where the token's metadata lives",
+          "can edit the token's name, symbol and URI",
+          "sets the UI multiplier (splits and similar corporate actions)"
+        ]
+      },
+      {
+        "address": "2Yq4T3mPNfjtEyTxSbRjRKqLf1pwbTasuCQrWe6QpM7x",
+        "roles": [
+          "freeze authority",
+          "permanent delegate"
+        ],
+        "powers": [
+          "freezes and thaws accounts: every new account starts frozen, so this key runs the allowlist",
+          "can transfer or burn tokens from any account"
+        ]
+      }
+    ],
+    "source": {
+      "name": "Solana mainnet RPC getAccountInfo (jsonParsed)",
+      "url": "https://api.mainnet-beta.solana.com",
+      "method": "getAccountInfo",
+      "fetchedAt": "2026-09-25T09:01:44.126Z",
+      "slot": 450306295
+    }
+  },
+  "markets": {
+    "found": [
+      {
+        "address": "BgQciH5noj5SyiuJgEjyibDo4xuRLjBFffXPgVZ8S66A",
+        "program": "MNFSTqtC93rEfYHB6hF82sKdZpUDFWkViLByLd1k1Ms",
+        "programName": "Manifest",
+        "kind": "clob",
+        "baseMint": "7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9",
+        "quoteMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "fwdiSide": "base",
+        "fwdiVault": {
+          "address": "7LVxJupNidGMbE3LP3XfeCzej97rxGwHikftqaMkHAJE",
+          "mint": "7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9",
+          "state": "frozen",
+          "amountRaw": "0",
+          "exists": true,
+          "inEnumeratedAccounts": true
+        },
+        "otherVault": {
+          "address": "Bn3jZTwZS5ULbU9CZUvbtv6aTNuDAEZvRQK9R5aiaYSV",
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "state": "initialized",
+          "amountRaw": "0",
+          "exists": true
+        },
+        "canTrade": false,
+        "blocker": "FWDI vault is frozen: the issuer's freeze authority has not thawed (allowlisted) this venue's vault, so no FWDI can be deposited or traded",
+        "discoveredBy": [
+          "Manifest scan (base / mint A)",
+          "FWDI token-account enumeration"
+        ],
+        "activity": {
+          "signatures": 5,
+          "capped": false,
+          "firstAt": "2025-12-18T20:18:22.000Z",
+          "lastAt": "2025-12-29T17:57:32.000Z",
+          "last30Days": 0
+        },
+        "source": {
+          "name": "Solana mainnet RPC getMultipleAccounts (market + vaults) and getSignaturesForAddress",
+          "url": "https://api.mainnet-beta.solana.com",
+          "method": "getMultipleAccounts",
+          "fetchedAt": "2026-09-25T09:02:22.975Z"
+        }
+      }
+    ],
+    "tokenAccounts": {
+      "total": 480,
+      "frozen": 225,
+      "initialized": 255,
+      "funded": [
+        {
+          "account": "9bZ61DRTFySyDSM7fEUBzuDm8qxJGvGAjVkGM87r9ynR",
+          "owner": "ANpjxEhcDLJH6EQ3HYwhbL37qfsUSRC4kWwAb7cYooAg",
+          "state": "initialized",
+          "amountRaw": "3513514000000",
+          "shares": 3513514,
+          "ownerProgram": "11111111111111111111111111111111",
+          "ownerLabel": "wallet (System)"
+        },
+        {
+          "account": "GrSCwqkgxFsrhL61ogj7FjLXiMPYCzWK4kKdBGz4PN3h",
+          "owner": "8ULQxXHkM46CbAFLerRRaRBwtqC6M9bCMvxvTB4EUgX9",
+          "state": "initialized",
+          "amountRaw": "3156493100000",
+          "shares": 3156493.1,
+          "ownerProgram": null,
+          "ownerLabel": "no account (PDA or empty wallet)"
+        },
+        {
+          "account": "6bMtnfcAYnfeAw5LtjapRHHz4TjPxL39A5p1soixHKHx",
+          "owner": "3EobZcvPCheGcvX4fXxAviRpaDdJEbcCJvUxgWZZjwZn",
+          "state": "initialized",
+          "amountRaw": "600000000000",
+          "shares": 600000,
+          "ownerProgram": "11111111111111111111111111111111",
+          "ownerLabel": "wallet (System)"
+        },
+        {
+          "account": "4qW9ViDYhVyJji4NA7N5bA3AEMbvHHr5S8P6jQAUxjuR",
+          "owner": "DeUZz7sbMsC7vpgqkkTHtsdDM2CjH71mc2NbjqMUjrRr",
+          "state": "initialized",
+          "amountRaw": "10811000000",
+          "shares": 10811,
+          "ownerProgram": "11111111111111111111111111111111",
+          "ownerLabel": "wallet (System)"
+        },
+        {
+          "account": "GVQks8XPkUPQjwefbcTwvfuAJUBYiRT3FUSctuzaD1k1",
+          "owner": "J9mWih3kR6gcHATuK4tQqqq3ow99wbKKnKWGEAfPfoJD",
+          "state": "initialized",
+          "amountRaw": "1000000",
+          "shares": 1,
+          "ownerProgram": "11111111111111111111111111111111",
+          "ownerLabel": "wallet (System)"
+        }
+      ],
+      "ownerPrograms": {
+        "wallet (System)": 455,
+        "no account (PDA or empty wallet)": 21,
+        "a Token-2022 account (nested)": 3,
+        "Loopscale": 1
+      },
+      "selfOwned": [
+        {
+          "account": "7LVxJupNidGMbE3LP3XfeCzej97rxGwHikftqaMkHAJE",
+          "owner": "7LVxJupNidGMbE3LP3XfeCzej97rxGwHikftqaMkHAJE",
+          "state": "frozen",
+          "amountRaw": "0",
+          "shares": 0
+        }
+      ],
+      "unattributedVaults": [],
+      "source": {
+        "name": "Solana mainnet RPC getProgramAccounts (Token-2022, memcmp mint @0)",
+        "url": "https://api.mainnet-beta.solana.com",
+        "method": "getProgramAccounts",
+        "fetchedAt": "2026-09-25T09:01:44.270Z",
+        "slot": 450306295
+      }
+    },
+    "scans": [
+      {
+        "program": "MNFSTqtC93rEfYHB6hF82sKdZpUDFWkViLByLd1k1Ms",
+        "programName": "Manifest",
+        "offset": 16,
+        "field": "base / mint A",
+        "status": "ok",
+        "matches": [
+          "BgQciH5noj5SyiuJgEjyibDo4xuRLjBFffXPgVZ8S66A"
+        ]
+      },
+      {
+        "program": "MNFSTqtC93rEfYHB6hF82sKdZpUDFWkViLByLd1k1Ms",
+        "programName": "Manifest",
+        "offset": 48,
+        "field": "quote / mint B",
+        "status": "ok",
+        "matches": []
+      },
+      {
+        "program": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc",
+        "programName": "Orca Whirlpool",
+        "offset": 101,
+        "field": "base / mint A",
+        "status": "ok",
+        "matches": []
+      },
+      {
+        "program": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc",
+        "programName": "Orca Whirlpool",
+        "offset": 181,
+        "field": "quote / mint B",
+        "status": "ok",
+        "matches": []
+      },
+      {
+        "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+        "programName": "Raydium CLMM",
+        "offset": 73,
+        "field": "base / mint A",
+        "status": "ok",
+        "matches": []
+      },
+      {
+        "program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+        "programName": "Raydium CLMM",
+        "offset": 105,
+        "field": "quote / mint B",
+        "status": "ok",
+        "matches": []
+      },
+      {
+        "program": "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C",
+        "programName": "Raydium CPMM",
+        "offset": 168,
+        "field": "base / mint A",
+        "status": "ok",
+        "matches": []
+      },
+      {
+        "program": "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C",
+        "programName": "Raydium CPMM",
+        "offset": 200,
+        "field": "quote / mint B",
+        "status": "ok",
+        "matches": []
+      },
+      {
+        "program": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
+        "programName": "Meteora DLMM",
+        "offset": 88,
+        "field": "base / mint A",
+        "status": "ok",
+        "matches": []
+      },
+      {
+        "program": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
+        "programName": "Meteora DLMM",
+        "offset": 120,
+        "field": "quote / mint B",
+        "status": "ok",
+        "matches": []
+      },
+      {
+        "program": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+        "programName": "Meteora DAMM v2",
+        "offset": 168,
+        "field": "base / mint A",
+        "status": "ok",
+        "matches": []
+      },
+      {
+        "program": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+        "programName": "Meteora DAMM v2",
+        "offset": 200,
+        "field": "quote / mint B",
+        "status": "ok",
+        "matches": []
+      },
+      {
+        "program": "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
+        "programName": "PumpSwap",
+        "offset": 43,
+        "field": "base / mint A",
+        "status": "ok",
+        "matches": []
+      },
+      {
+        "program": "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
+        "programName": "PumpSwap",
+        "offset": 75,
+        "field": "quote / mint B",
+        "status": "ok",
+        "matches": []
+      }
+    ],
+    "largestAccounts": {
+      "status": "rate_limited",
+      "accounts": [],
+      "note": "getTokenLargestAccounts: HTTP 429; the full getProgramAccounts enumeration is used instead"
+    },
+    "jupiter": {
+      "status": "ok",
+      "firstPool": "BgQciH5noj5SyiuJgEjyibDo4xuRLjBFffXPgVZ8S66A",
+      "firstPoolCreatedAt": "2025-12-18T20:18:22Z",
+      "listedPoolFound": true,
+      "source": {
+        "name": "Jupiter token API (off-chain cross-check)",
+        "url": "https://lite-api.jup.ag/tokens/v2/search?query=7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9",
+        "fetchedAt": "2026-09-25T09:02:22.671Z"
+      }
+    },
+    "sources": [
+      {
+        "name": "Solana mainnet RPC getProgramAccounts (Token-2022, memcmp mint @0)",
+        "url": "https://api.mainnet-beta.solana.com",
+        "method": "getProgramAccounts",
+        "fetchedAt": "2026-09-25T09:01:44.270Z",
+        "slot": 450306295
+      },
+      {
+        "name": "Solana mainnet RPC getProgramAccounts on DEX programs (memcmp FWDI at verified mint offsets)",
+        "url": "https://api.mainnet-beta.solana.com",
+        "method": "getProgramAccounts",
+        "fetchedAt": "2026-09-25T09:02:21.848Z"
+      },
+      {
+        "name": "Jupiter token API (off-chain cross-check)",
+        "url": "https://lite-api.jup.ag/tokens/v2/search?query=7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9",
+        "fetchedAt": "2026-09-25T09:02:22.671Z"
+      }
+    ]
+  },
+  "activity": {
+    "windowDays": 30,
+    "from": "2026-08-26T09:01:43.893Z",
+    "to": "2026-09-25T09:01:43.893Z",
+    "addresses": [
+      {
+        "address": "7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9",
+        "role": "mint",
+        "signaturesInWindow": 16,
+        "pages": 1
+      },
+      {
+        "address": "9bZ61DRTFySyDSM7fEUBzuDm8qxJGvGAjVkGM87r9ynR",
+        "role": "holder account (wallet (System))",
+        "signaturesInWindow": 0,
+        "pages": 1
+      },
+      {
+        "address": "GrSCwqkgxFsrhL61ogj7FjLXiMPYCzWK4kKdBGz4PN3h",
+        "role": "holder account (no account (PDA or empty wallet))",
+        "signaturesInWindow": 9,
+        "pages": 1
+      },
+      {
+        "address": "6bMtnfcAYnfeAw5LtjapRHHz4TjPxL39A5p1soixHKHx",
+        "role": "holder account (wallet (System))",
+        "signaturesInWindow": 0,
+        "pages": 1
+      },
+      {
+        "address": "4qW9ViDYhVyJji4NA7N5bA3AEMbvHHr5S8P6jQAUxjuR",
+        "role": "holder account (wallet (System))",
+        "signaturesInWindow": 0,
+        "pages": 1
+      },
+      {
+        "address": "GVQks8XPkUPQjwefbcTwvfuAJUBYiRT3FUSctuzaD1k1",
+        "role": "holder account (wallet (System))",
+        "signaturesInWindow": 0,
+        "pages": 1
+      },
+      {
+        "address": "BgQciH5noj5SyiuJgEjyibDo4xuRLjBFffXPgVZ8S66A",
+        "role": "Manifest market",
+        "signaturesInWindow": 0,
+        "pages": 1
+      },
+      {
+        "address": "7LVxJupNidGMbE3LP3XfeCzej97rxGwHikftqaMkHAJE",
+        "role": "Manifest FWDI vault",
+        "signaturesInWindow": 0,
+        "pages": 1
+      },
+      {
+        "address": "Bn3jZTwZS5ULbU9CZUvbtv6aTNuDAEZvRQK9R5aiaYSV",
+        "role": "Manifest quote vault",
+        "signaturesInWindow": 0,
+        "pages": 1
+      }
+    ],
+    "signatures": 16,
+    "succeeded": 7,
+    "failed": 9,
+    "trades": 0,
+    "categories": {
+      "ata-create": 2,
+      "burn": 2,
+      "redemption": 2,
+      "transfer": 2,
+      "close": 1,
+      "failed": 9,
+      "lending": 9,
+      "thaw": 1
+    },
+    "entries": [
+      {
+        "signature": "3hRdu4KPK7Cg3TLZjXUs9ZWoz1ErQyYE6KVtAouwSe3tmH3n62juPKryyK5Tg3FTuCsDokb9SNSoewS3NX2yBgba",
+        "at": "2026-09-21T17:56:23.000Z",
+        "slot": 449128772,
+        "ok": true,
+        "categories": [
+          "ata-create"
+        ],
+        "programs": [
+          "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+          "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "11111111111111111111111111111111",
+          "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        ]
+      },
+      {
+        "signature": "47eUA5mjoqR4RXWsmkFPNaJhjtgMunaj3PK4icEvzxvVshhmowxGRMebyq9Wuqt74G7Hj7gYBd3FWijuQCQwHmZJ",
+        "at": "2026-09-10T19:42:35.000Z",
+        "slot": 445966276,
+        "ok": true,
+        "categories": [
+          "burn"
+        ],
+        "programs": [
+          "ComputeBudget111111111111111111111111111111",
+          "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        ]
+      },
+      {
+        "signature": "5e8HZQJ37DGCkhDpuie3xLfFPXwoo6ZhHRt2atUFQrEps2F93ZnEb7VATugz54rXL1XpKT9jGAbbKcHjH9psyiED",
+        "at": "2026-09-10T19:42:14.000Z",
+        "slot": 445966210,
+        "ok": true,
+        "categories": [
+          "redemption",
+          "transfer"
+        ],
+        "programs": [
+          "ComputeBudget111111111111111111111111111111",
+          "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+          "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+        ]
+      },
+      {
+        "signature": "f839jKZM4YFYESvGTKrKoS2DLoz2hjHagfStR7LnoMe3H9LCUFpmiMi55K9C41Gj9xgVBR1yRJwz7XHurynGpcG",
+        "at": "2026-09-10T19:39:39.000Z",
+        "slot": 445965718,
+        "ok": true,
+        "categories": [
+          "burn"
+        ],
+        "programs": [
+          "ComputeBudget111111111111111111111111111111",
+          "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        ]
+      },
+      {
+        "signature": "Cs85BA8NE8EWtY85seHU9mx24BmqGQhW7nzV17PbDmo7NmbjFLBDpwWCgJVHK9QZ5GHFdbHpjV5WzpcwDFvC6M9",
+        "at": "2026-09-10T19:38:24.000Z",
+        "slot": 445965479,
+        "ok": true,
+        "categories": [
+          "redemption",
+          "transfer"
+        ],
+        "programs": [
+          "ComputeBudget111111111111111111111111111111",
+          "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+          "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+        ]
+      },
+      {
+        "signature": "9e2ZitLJ2Tyh74wF1zLnrxBEDaX8tkUPwPffiWJVEquKHV4rH2YW4asoArkQUxj9CzWuDbYHt6XMJ65t8Wm8Jii",
+        "at": "2026-09-08T08:37:35.000Z",
+        "slot": 445294599,
+        "ok": true,
+        "categories": [
+          "close"
+        ],
+        "programs": [
+          "ComputeBudget111111111111111111111111111111",
+          "CLEANALo6FtS6quqTTEXDGFFTuSKMkeKGgcweeiPRJzK",
+          "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "11111111111111111111111111111111",
+          "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        ]
+      },
+      {
+        "signature": "3ru4c5KCyGhvhzgXESMVWKGos8AVcADnDeYqkWTsNCNxRGGQqgL4AenTfMgVP4TQ654k12cqncgVdmiBJ8MwoqqP",
+        "at": "2026-09-04T13:30:09.000Z",
+        "slot": 444256941,
+        "ok": false,
+        "categories": [
+          "failed",
+          "lending"
+        ],
+        "programs": [
+          "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ",
+          "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+          "ComputeBudget111111111111111111111111111111",
+          "11111111111111111111111111111111"
+        ]
+      },
+      {
+        "signature": "2ByTA8Nn6Ev9ak9id7Jw5qmtk3EY83XenXrZRopekZDSDs5qtb53WPNZ9s8UsGxEKVuttwoEeMNHr2Q6kCQBGKbo",
+        "at": "2026-09-02T13:31:46.000Z",
+        "slot": 443708902,
+        "ok": false,
+        "categories": [
+          "failed",
+          "lending"
+        ],
+        "programs": [
+          "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ",
+          "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+          "ComputeBudget111111111111111111111111111111",
+          "11111111111111111111111111111111"
+        ]
+      },
+      {
+        "signature": "2oHKXXUtQ6bqkSXZRfKmqeNwGgPg9VZ6d4RV6z8MsgjGxzVae2FqbSii1EVQ5iU5Ki3QKKjgke3A74GbrDQJ35dK",
+        "at": "2026-08-28T20:35:22.000Z",
+        "slot": 442426187,
+        "ok": true,
+        "categories": [
+          "ata-create",
+          "thaw"
+        ],
+        "programs": [
+          "11111111111111111111111111111111",
+          "ComputeBudget111111111111111111111111111111",
+          "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+          "HFkKyweJDUuGer5KaCst5qZSYD5aapKaD7xzdNaoRtfA",
+          "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        ]
+      },
+      {
+        "signature": "3Z3GsATMZysbcgqtVjHnnggckFkg71qdsYndrPWt579nMDNPKcqKkicx2kW1CoqyvbCFsswdubGfkwdZAcMkv49G",
+        "at": "2026-08-28T19:33:23.000Z",
+        "slot": 442414505,
+        "ok": false,
+        "categories": [
+          "failed",
+          "lending"
+        ],
+        "programs": [
+          "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ",
+          "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+          "ComputeBudget111111111111111111111111111111",
+          "11111111111111111111111111111111"
+        ]
+      },
+      {
+        "signature": "5uTweMVhDxiuZbnAQyBTyoEFYu33c8HKjvuPHHahkb4qpWJFCM6VZZ96TJke5tiLTkUje5XnEDZb9Z9HZ4kEBv2",
+        "at": "2026-08-28T19:17:44.000Z",
+        "slot": 442411573,
+        "ok": false,
+        "categories": [
+          "failed",
+          "lending"
+        ],
+        "programs": [
+          "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ",
+          "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+          "ComputeBudget111111111111111111111111111111",
+          "11111111111111111111111111111111"
+        ]
+      },
+      {
+        "signature": "2xkBMUrsg9Ky542bKuYqXQRDGuJ4GBLjdGAC7ev5Y1sdw9bcjQ6QA3622WpBxf81y8Bhk8BrzPEKzR76uy91baqw",
+        "at": "2026-08-28T14:48:05.000Z",
+        "slot": 442361967,
+        "ok": false,
+        "categories": [
+          "failed",
+          "lending"
+        ],
+        "programs": [
+          "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ",
+          "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+          "ComputeBudget111111111111111111111111111111"
+        ]
+      },
+      {
+        "signature": "39KyBnKehsEAmcQe89U5Eqo5asVVB1VKRueuWkY3uJnVakXn1nTxDssceWGocEhzSbm3YAwuz8yYfFMJpVDsctnB",
+        "at": "2026-08-28T14:07:59.000Z",
+        "slot": 442355446,
+        "ok": false,
+        "categories": [
+          "failed",
+          "lending"
+        ],
+        "programs": [
+          "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ",
+          "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+          "ComputeBudget111111111111111111111111111111"
+        ]
+      },
+      {
+        "signature": "3gxu89enyptuAfaz8cHAiWPgkSN3MKhxh1hGxcrcLobSC6SYW6SA7eguAHU98z7hqMjkcEkMRRXFv9f6iXCNYupD",
+        "at": "2026-08-28T13:46:07.000Z",
+        "slot": 442351876,
+        "ok": false,
+        "categories": [
+          "failed",
+          "lending"
+        ],
+        "programs": [
+          "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ",
+          "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+          "ComputeBudget111111111111111111111111111111"
+        ]
+      },
+      {
+        "signature": "bytpceBoQ78dkxaVq3VDD4xdtguRziTJVbpq9zRgKFyedSwj9MTLDXpyjwkPqNMJx9sSN8benznG77zrt1JpuTj",
+        "at": "2026-08-28T13:36:38.000Z",
+        "slot": 442350324,
+        "ok": false,
+        "categories": [
+          "failed",
+          "lending"
+        ],
+        "programs": [
+          "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ",
+          "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+          "ComputeBudget111111111111111111111111111111"
+        ]
+      },
+      {
+        "signature": "3DTth8uNFbcPjv7nRKkiPfHwUhFfKRcssNZo6YLWqYErdfhe8v4CMFzndTxCuunjaFHatRWV7BhgycozZVfRvxk3",
+        "at": "2026-08-28T13:32:54.000Z",
+        "slot": 442349709,
+        "ok": false,
+        "categories": [
+          "failed",
+          "lending"
+        ],
+        "programs": [
+          "HFn8GnPADiny6XqUoWE8uRPPxb29ikn4yTuPa9MF2fWJ",
+          "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
+          "ComputeBudget111111111111111111111111111111"
+        ]
+      }
+    ],
+    "truncated": false,
+    "sources": [
+      {
+        "name": "Solana mainnet RPC getSignaturesForAddress (mint, funded holder accounts, markets, vaults)",
+        "url": "https://api.mainnet-beta.solana.com",
+        "method": "getSignaturesForAddress",
+        "fetchedAt": "2026-09-25T09:02:27.380Z"
+      },
+      {
+        "name": "Solana mainnet RPC getTransaction (jsonParsed) for classification",
+        "url": "https://api.mainnet-beta.solana.com",
+        "method": "getTransaction",
+        "fetchedAt": "2026-09-25T09:02:46.616Z"
+      }
+    ]
+  },
+  "budget": {
+    "status": "complete",
+    "symbol": "FWDI",
+    "tier": "Tier 2",
+    "tierLabel": "Tier 2 (inferred: Russell 2000 member, not S&P 500/Russell 1000)",
+    "tierPercent": 2.5,
+    "month": "2026-08",
+    "primary": "nasdaq",
+    "tradingDays": 21,
+    "averageDailyShareVolume": 1668416.8095238095,
+    "dailyShareBudget": 41710.42023809524,
+    "dailyShareBudgetRaw": "41710420238",
+    "multiplierUsed": 1,
+    "crossCheck": {
+      "nasdaqAdv": 1668416.8095238095,
+      "nasdaqDays": 21,
+      "yahooAdv": 1667966.6666666667,
+      "yahooDays": 21,
+      "disagreementPct": 0.02698023986411414,
+      "flagged": false,
+      "thresholdPct": 1
+    },
+    "daily": [
+      {
+        "date": "2026-08-03",
+        "nasdaq": 803595,
+        "yahoo": 803500
+      },
+      {
+        "date": "2026-08-04",
+        "nasdaq": 931995,
+        "yahoo": 932000
+      },
+      {
+        "date": "2026-08-05",
+        "nasdaq": 533001,
+        "yahoo": 533000
+      },
+      {
+        "date": "2026-08-06",
+        "nasdaq": 459432,
+        "yahoo": 459200
+      },
+      {
+        "date": "2026-08-07",
+        "nasdaq": 521795,
+        "yahoo": 521800
+      },
+      {
+        "date": "2026-08-10",
+        "nasdaq": 743022,
+        "yahoo": 743000
+      },
+      {
+        "date": "2026-08-11",
+        "nasdaq": 699472,
+        "yahoo": 699500
+      },
+      {
+        "date": "2026-08-12",
+        "nasdaq": 1038611,
+        "yahoo": 1038600
+      },
+      {
+        "date": "2026-08-13",
+        "nasdaq": 1185637,
+        "yahoo": 1185600
+      },
+      {
+        "date": "2026-08-14",
+        "nasdaq": 1448985,
+        "yahoo": 1448900
+      },
+      {
+        "date": "2026-08-17",
+        "nasdaq": 1071067,
+        "yahoo": 1071100
+      },
+      {
+        "date": "2026-08-18",
+        "nasdaq": 1273085,
+        "yahoo": 1273100
+      },
+      {
+        "date": "2026-08-19",
+        "nasdaq": 1625330,
+        "yahoo": 1625300
+      },
+      {
+        "date": "2026-08-20",
+        "nasdaq": 1444952,
+        "yahoo": 1445000
+      },
+      {
+        "date": "2026-08-21",
+        "nasdaq": 1993017,
+        "yahoo": 1993000
+      },
+      {
+        "date": "2026-08-24",
+        "nasdaq": 4741005,
+        "yahoo": 4741000
+      },
+      {
+        "date": "2026-08-25",
+        "nasdaq": 2817782,
+        "yahoo": 2817800
+      },
+      {
+        "date": "2026-08-26",
+        "nasdaq": 1514384,
+        "yahoo": 1514400
+      },
+      {
+        "date": "2026-08-27",
+        "nasdaq": 3831810,
+        "yahoo": 3822800
+      },
+      {
+        "date": "2026-08-28",
+        "nasdaq": 4142047,
+        "yahoo": 4142000
+      },
+      {
+        "date": "2026-08-31",
+        "nasdaq": 2216729,
+        "yahoo": 2216700
+      }
+    ],
+    "sources": [
+      {
+        "name": "Nasdaq.com historical quotes API (consolidated daily share volume)",
+        "url": "https://api.nasdaq.com/api/quote/FWDI/historical?assetclass=stocks&fromdate=2026-08-01&todate=2026-08-31&limit=40",
+        "fetchedAt": "2026-09-25T09:02:46.659Z"
+      },
+      {
+        "name": "Yahoo Finance chart API (daily volume, cross-check)",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/FWDI?period1=1785542400&period2=1788220800&interval=1d",
+        "fetchedAt": "2026-09-25T09:02:46.853Z"
+      }
+    ],
+    "errors": []
+  },
+  "haltAudit": {
+    "status": "complete",
+    "symbols": [
+      "FWDI",
+      "FORD"
+    ],
+    "events": [
+      {
+        "signature": "QS8RhkuCfFqWjEJqBHuCo9Kb46dXjFhNPHnH5sRw5cTf6TTuddCjUFEVxSMvi1BapWqGPHqCPyYXSbiq46LtTV2",
+        "at": "2025-12-18T20:18:22.000Z",
+        "kind": "Manifest market transaction"
+      },
+      {
+        "signature": "5EEUrNyKErP11kNmmfArGCcjTPq4EQuyh9F9KQGyZSBaQBtEqdh8uZfRVjtvjaTuyb3oRBhWHRwg7bfG6WghRBYx",
+        "at": "2025-12-18T20:18:51.000Z",
+        "kind": "Manifest market transaction"
+      },
+      {
+        "signature": "3Dhir8oM5s8FUR9NsZtepLZt2g4DoGG77k5ioucfGtUBn3CT9TMYK4cWksy4EuXeuwoB6VWRQEqsXSSin1MxKua4",
+        "at": "2025-12-18T20:19:15.000Z",
+        "kind": "Manifest market transaction"
+      },
+      {
+        "signature": "5rEb8SDjLLVH1LdBWb5fTz6eziQRie2cgajZsNYtGkNRVW4vtDcR8a5gT87mbDNvcjLDGVQKWz3HsJQXANhB8akk",
+        "at": "2025-12-18T20:19:35.000Z",
+        "kind": "Manifest market transaction"
+      },
+      {
+        "signature": "5WwrNfkhBsjMfF4mfTQozDR4kL5tprERGqDWpNzLpz3SXvFK7mTrovTZ7MLg3K84gij6kZnjm7ULRqkSnPTzNoeM",
+        "at": "2025-12-29T17:57:32.000Z",
+        "kind": "Manifest market transaction"
+      }
+    ],
+    "history": {
+      "from": "2025-01-01",
+      "to": "2026-09-25",
+      "perSymbol": [
+        {
+          "symbol": "FWDI",
+          "ok": true,
+          "halts": 0
+        },
+        {
+          "symbol": "FORD",
+          "ok": true,
+          "halts": 8
+        }
+      ]
+    },
+    "halts": [
+      {
+        "symbol": "FORD",
+        "reason": "LULD pause",
+        "haltAt": "2025-09-12T13:31:55.000Z",
+        "resumedAt": "2025-09-12T13:36:55.000Z",
+        "exchange": "Nasdaq",
+        "date": "2025-09-12",
+        "source": "nyse-history"
+      },
+      {
+        "symbol": "FORD",
+        "reason": "LULD pause",
+        "haltAt": "2025-09-08T14:09:56.000Z",
+        "resumedAt": "2025-09-08T14:14:56.000Z",
+        "exchange": "Nasdaq",
+        "date": "2025-09-08",
+        "source": "nyse-history"
+      },
+      {
+        "symbol": "FORD",
+        "reason": "LULD pause",
+        "haltAt": "2025-09-08T13:35:48.000Z",
+        "resumedAt": "2025-09-08T13:45:48.000Z",
+        "exchange": "Nasdaq",
+        "date": "2025-09-08",
+        "source": "nyse-history"
+      },
+      {
+        "symbol": "FORD",
+        "reason": "LULD pause",
+        "haltAt": "2025-08-04T13:56:07.000Z",
+        "resumedAt": "2025-08-04T14:06:07.000Z",
+        "exchange": "Nasdaq",
+        "date": "2025-08-04",
+        "source": "nyse-history"
+      },
+      {
+        "symbol": "FORD",
+        "reason": "LULD pause",
+        "haltAt": "2025-04-07T15:48:38.000Z",
+        "resumedAt": "2025-04-07T15:53:38.000Z",
+        "exchange": "Nasdaq",
+        "date": "2025-04-07",
+        "source": "nyse-history"
+      },
+      {
+        "symbol": "FORD",
+        "reason": "LULD pause",
+        "haltAt": "2025-04-04T18:30:32.000Z",
+        "resumedAt": "2025-04-04T18:35:32.000Z",
+        "exchange": "Nasdaq",
+        "date": "2025-04-04",
+        "source": "nyse-history"
+      },
+      {
+        "symbol": "FORD",
+        "reason": "LULD pause",
+        "haltAt": "2025-04-04T17:48:21.000Z",
+        "resumedAt": "2025-04-04T17:53:21.000Z",
+        "exchange": "Nasdaq",
+        "date": "2025-04-04",
+        "source": "nyse-history"
+      },
+      {
+        "symbol": "FORD",
+        "reason": "LULD pause",
+        "haltAt": "2025-04-04T15:56:11.000Z",
+        "resumedAt": "2025-04-04T16:01:11.000Z",
+        "exchange": "Nasdaq",
+        "date": "2025-04-04",
+        "source": "nyse-history"
+      }
+    ],
+    "latestHaltAt": "2025-09-12T13:31:55.000Z",
+    "crossCheck": {
+      "status": "agrees",
+      "datesQueried": [
+        {
+          "date": "2025-12-18",
+          "ok": true,
+          "items": 51,
+          "fwdiHalts": 0
+        },
+        {
+          "date": "2025-12-29",
+          "ok": true,
+          "items": 28,
+          "fwdiHalts": 0
+        },
+        {
+          "date": "2025-09-12",
+          "ok": true,
+          "items": 50,
+          "fwdiHalts": 1
+        }
+      ],
+      "note": "3 date(s) checked against the official Nasdaq RSS; 0 disagreement(s)"
+    },
+    "control": {
+      "date": "2025-09-12",
+      "expected": "FORD LULD pause at 09:31:55 ET on 2025-09-12",
+      "found": true
+    },
+    "overlaps": [],
+    "note": "8 FWDI/FORD halt(s) 2025-01-01..2026-09-25, latest 2025-09-12 (FORD LULD pause); 5 on-chain market event(s), first 2025-12-18T20:18:22.000Z; 0 overlap(s). Control FORD halt 2025-09-12 09:31:55 ET: visible.",
+    "sources": [
+      {
+        "name": "Solana mainnet RPC getSignaturesForAddress (market transactions)",
+        "url": "https://api.mainnet-beta.solana.com",
+        "method": "getSignaturesForAddress",
+        "fetchedAt": "2026-09-25T09:02:47.245Z"
+      },
+      {
+        "name": "NYSE historical trade-halt CSV for FWDI (covers Nasdaq-listed halts)",
+        "url": "https://www.nyse.com/api/trade-halts/historical/download?symbol=FWDI&haltDateFrom=2025-01-01&haltDateTo=2026-09-25",
+        "fetchedAt": "2026-09-25T09:02:47.618Z"
+      },
+      {
+        "name": "NYSE historical trade-halt CSV for FORD (covers Nasdaq-listed halts)",
+        "url": "https://www.nyse.com/api/trade-halts/historical/download?symbol=FORD&haltDateFrom=2025-01-01&haltDateTo=2026-09-25",
+        "fetchedAt": "2026-09-25T09:02:47.970Z"
+      },
+      {
+        "name": "Nasdaq Trader trade-halt RSS for 2025-12-18 (official)",
+        "url": "https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts&haltdate=12182025",
+        "fetchedAt": "2026-09-25T09:02:48.840Z"
+      },
+      {
+        "name": "Nasdaq Trader trade-halt RSS for 2025-12-29 (official)",
+        "url": "https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts&haltdate=12292025",
+        "fetchedAt": "2026-09-25T09:02:51.356Z"
+      },
+      {
+        "name": "Nasdaq Trader trade-halt RSS for 2025-09-12 (official)",
+        "url": "https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts&haltdate=09122025",
+        "fetchedAt": "2026-09-25T09:02:53.773Z"
+      }
+    ]
+  }
+}
