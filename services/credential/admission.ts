@@ -58,6 +58,7 @@ export interface CredentialStatus {
   expiresAtUnix: number | null
   credential: CredentialRef
   stockAccount: StockAccount
+  admissionSignature: string | null
   lastScreening: { at: string; event: string; result?: string } | null
 }
 
@@ -230,6 +231,7 @@ export function createAdmissions(d: AdmissionDeps): Admissions {
         label: LABEL, wallet, cluster: d.cluster, gate: d.backend.kind, status, admitted: live,
         expiresAt: cred.expiresAt !== null ? iso(cred.expiresAt) : null, expiresAtUnix: cred.expiresAt !== null ? Number(cred.expiresAt) : null,
         credential: { kind: cred.kind, address: cred.address }, stockAccount: stock,
+        admissionSignature: status === "admitted" ? d.log.lastAdmissionSignature(wallet) : null,
         lastScreening: last ? { at: last.at, event: last.event, ...(last.result ? { result: last.result } : {}) } : null,
       }
     },

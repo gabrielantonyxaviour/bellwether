@@ -145,7 +145,7 @@ function fakeAdmissions(sanctioned: string): Admissions & { revoked: string[]; o
     revoke: async (wallet) => { revoked.push(wallet); return { label: LABEL, wallet, status: "revoked" as const, signature: "sig" } },
     status: async (wallet) => {
       if (wallet === "boom") throw new Error("secret stack detail")
-      return { label: LABEL, wallet, cluster: "fork", gate: "sas" as const, status: "not_admitted" as const, admitted: false, expiresAt: null, expiresAtUnix: null, credential: { kind: "sas" as const, address: wallet }, stockAccount: { address: wallet, state: "missing" as const }, lastScreening: null }
+      return { label: LABEL, wallet, cluster: "fork", gate: "sas" as const, status: "not_admitted" as const, admitted: false, expiresAt: null, expiresAtUnix: null, credential: { kind: "sas" as const, address: wallet }, stockAccount: { address: wallet, state: "missing" as const }, admissionSignature: null, lastScreening: null }
     },
     screeningLog: async () => [],
   }

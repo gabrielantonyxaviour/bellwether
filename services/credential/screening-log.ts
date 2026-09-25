@@ -50,4 +50,12 @@ export class ScreeningLog {
   lastCredentialEvent(wallet: string): LogEntry | null {
     return this.recent(Number.MAX_SAFE_INTEGER, wallet).find((e) => e.event === "admitted" || e.event === "revoked") ?? null
   }
+
+  /** Latest on-chain admission; idempotent admits record null and preserve earlier proof. */
+  lastAdmissionSignature(wallet: string): string | null {
+    const entry = this.recent(Number.MAX_SAFE_INTEGER, wallet).find((e) =>
+      e.event === "admitted" && typeof e.signature === "string" && e.signature.length > 0,
+    )
+    return entry ? entry.signature as string : null
+  }
 }
