@@ -58,13 +58,13 @@ export function createRpcGateway(options: {
   const inFlight = new Map<string, Promise<unknown>>()
 
   async function upstream(url: string, request: RpcRequest): Promise<unknown> {
-    for (let attempt = 0; attempt < 4; attempt++) {
+    for (let attempt = 0; attempt < 2; attempt++) {
       const response = await fetchImpl(url, {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify(request), signal: AbortSignal.timeout(8_000),
       })
-      if (response.status === 429 && attempt < 3) {
-        await sleep(Math.floor(150 * 2 ** attempt + 150 * random()))
+      if (response.status === 429 && attempt === 0) {
+        await sleep(Math.floor(150 + 150 * random()))
         continue
       }
       if (!response.ok) throw new Error(`upstream HTTP ${response.status}`)

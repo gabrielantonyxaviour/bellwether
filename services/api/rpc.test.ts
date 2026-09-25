@@ -72,14 +72,14 @@ test("50 identical concurrent reads use one upstream request and preserve caller
   results.forEach((response, id) => assert.deepEqual(response, { status: 200, body: { jsonrpc: "2.0", id, result: { value: 42 } } }))
 })
 
-test("429 receives jittered backoff and a confirmed transaction is cached permanently", async () => {
+test("429 receives one jittered backoff and a confirmed transaction is cached permanently", async () => {
   let calls = 0
   let clock = 0
   const waits: number[] = []
   const gateway = createRpcGateway({ primary: "https://primary.example", now: () => clock, random: () => 0,
     sleep: async (ms) => { waits.push(ms) }, fetchImpl: async (_url, init) => {
       calls++
-      if (calls < 3) return new Response("rate limited", { status: 429 })
+      if (calls < 2) return new Response("rate limited", { status: 429 })
       const request = JSON.parse(String(init?.body))
       return Response.json({ jsonrpc: "2.0", id: request.id, result: { slot: 10 } })
     } })
@@ -87,8 +87,24 @@ test("429 receives jittered backoff and a confirmed transaction is cached perman
   assert.equal((await gateway(request)).status, 200)
   clock = 10_000_000
   assert.equal((await gateway(request)).status, 200)
-  assert.equal(calls, 3)
-  assert.deepEqual(waits, [150, 300])
+  assert.equal(calls, 2)
+  assert.deepEqual(waits, [150])
+})
+
+test("two primary 429 responses fail over after one backoff", async () => {
+  const urls: string[] = []
+  const waits: number[] = []
+  const gateway = createRpcGateway({ primary: "https://keyed.example", fallbacks: ["https://public.example"],
+    sleep: async (ms) => { waits.push(ms) }, random: () => 0, fetchImpl: async (url, init) => {
+      urls.push(String(url))
+      if (String(url).includes("keyed")) return new Response("rate limited", { status: 429 })
+      const request = JSON.parse(String(init?.body))
+      return Response.json({ jsonrpc: "2.0", id: request.id, result: { value: 7 } })
+    } })
+  assert.deepEqual(await gateway(call("getAccountInfo", ["account"])),
+    { status: 200, body: { jsonrpc: "2.0", id: 1, result: { value: 7 } } })
+  assert.deepEqual(urls, ["https://keyed.example", "https://keyed.example", "https://public.example"])
+  assert.deepEqual(waits, [150])
 })
 
 test("Free-tier getProgramAccounts limitation falls back and caches for 20 seconds", async () => {
