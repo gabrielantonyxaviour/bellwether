@@ -22,3 +22,6 @@ keys/
 test-ledger/
 evidence/*.webm
 .wrangler/
+
+# Film source and third-party media stay outside the public repository.
+/docs/film/
