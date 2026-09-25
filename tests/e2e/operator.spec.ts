@@ -1,4 +1,4 @@
-import { mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs"
 import { test, expect } from "@playwright/test"
 import {
   appendTransactionMessageInstructions, createTransactionMessage, generateKeyPairSigner, getBase64EncodedWireTransaction,
@@ -96,9 +96,11 @@ test("operator workbench on an isolated fork", async ({ browser }) => {
       await expect(page.getByText("Confirmed").first()).toBeVisible({ timeout: 90_000 })
       await expect(demo.getByText("Active")).toBeVisible({ timeout: 20_000 })
 
-      const subject = (await generateKeyPairSigner()).address
-      await page.goto(`${WEB}/operator/participants`)
-      await page.getByLabel("Operator token").fill(stack.operatorToken)
+    const subject = (await generateKeyPairSigner()).address
+    await page.goto(`${WEB}/operator/participants`)
+    await expect(page.getByText("No wallet selected")).toBeVisible()
+    await expect(page.getByText("Reading credential…")).toHaveCount(0)
+    await page.getByLabel("Operator token").fill(stack.operatorToken)
       await page.getByRole("button", { name: "Save token" }).click()
       await page.getByLabel("Participant wallet").fill(subject)
       await page.getByRole("button", { name: "Review issue" }).click()
@@ -127,10 +129,13 @@ test("operator workbench on an isolated fork", async ({ browser }) => {
 
       const report = await fetch(`${API}/rehearsal/fwdi`)
       expect(report.ok, await report.text()).toBe(true)
-      await page.goto(`${WEB}/operator/rehearsal/fwdi`)
-      await expect(page.getByRole("heading", { name: "FWDI launch rehearsal" })).toBeVisible()
-      await expect(page.getByText("Tier 2").first()).toBeVisible({ timeout: 30_000 })
-      await expect(page.getByText(/frozen/i).first()).toBeVisible()
+    await page.goto(`${WEB}/operator/rehearsal/fwdi`)
+    await expect(page.getByRole("heading", { name: "FWDI launch rehearsal" })).toBeVisible()
+    await expect(page.getByText("Tier 2").first()).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByText(/frozen/i).first()).toBeVisible()
+    const fwdiAccounts = await page.locator('main a[href^="https://solscan.io/account/"]').evaluateAll((links) => links.map((link) => (link as HTMLAnchorElement).href))
+    expect(fwdiAccounts.length).toBeGreaterThan(0)
+    expect(fwdiAccounts.every((href) => !new URL(href).searchParams.has("cluster")), fwdiAccounts.join(" | ")).toBe(true)
 
       for (const width of [375, 768, 1440]) {
         await page.setViewportSize({ width, height: 900 })
@@ -138,9 +143,19 @@ test("operator workbench on an isolated fork", async ({ browser }) => {
           await page.goto(`${WEB}${route}`)
           await expect(page.locator("main")).toBeVisible()
           expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${route} overflows at ${width}px`).toBe(true)
-        }
       }
-      complete = true
+    }
+    const devnetConfig = JSON.parse(readFileSync("scripts/deploy/deployments/devnet.web.json", "utf8")) as Record<string, string>
+    await page.unroute("**/config.json")
+    await page.route("**/config.json", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+      ...devnetConfig, apiBaseUrl: "https://bellwether-api.larinova.com", credentialApiUrl: "https://bellwether-api.larinova.com", rpcUrl: "https://bellwether-api.larinova.com/rpc",
+    }) }))
+    await page.goto(`${WEB}/operator/symbols`)
+    await expect(page.getByRole("heading", { name: "BWRS" })).toBeVisible({ timeout: 30_000 })
+    const devnetAccounts = await page.locator('main a[href^="https://solscan.io/account/"]').evaluateAll((links) => links.map((link) => (link as HTMLAnchorElement).href))
+    expect(devnetAccounts.length).toBeGreaterThan(0)
+    expect(devnetAccounts.every((href) => new URL(href).searchParams.get("cluster") === "devnet"), devnetAccounts.join(" | ")).toBe(true)
+    complete = true
     } finally {
       await context.close()
       await stack.stop()
