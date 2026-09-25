@@ -108,16 +108,17 @@ test("home, explorer and about render live devnet state", async ({ page }) => {
   await page.getByRole("tab", { name: /Swap/ }).click()
   await expect(page.getByRole("tabpanel")).toContainText("0.30%")
 
-  await page.getByRole("link", { name: /Open explorer/ }).click()
-  await expect(page).toHaveURL(/\/explorer/)
+  const proofDate = "2026-09-25"
+  const proofSignature = devnet.signatures.publicFreshSwap
+  expect(proofSignature).toBeTruthy()
+  await page.goto(`${WEB}/explorer?date=${proofDate}`)
   await expect(page.getByRole("heading", { name: "Explorer" })).toBeVisible()
-  const smoke = page.locator(`a[href*="${devnet.signatures.smokeSwap}"]:visible`)
-  await expect(smoke.first()).toBeVisible()
-  expect(await smoke.first().getAttribute("href")).toContain("cluster=devnet")
-  await expect(page.getByRole("link", { name: "JSON" })).toHaveAttribute("href", new RegExp(`${apiBase.replace(/[.]/g, "\\.")}/tape`))
-  await page.getByRole("button", { name: "Sell" }).click()
-  await expect(page.getByRole("heading", { name: "Explorer" })).toBeVisible()
-  await page.getByLabel("Date, last 30 days").fill("2026-09-01")
+  await expect(page.getByLabel("UTC date")).toHaveValue(proofDate)
+  const proof = page.locator(`a[href*="${proofSignature}"]`)
+  await expect(proof.first()).toBeVisible()
+  expect(await proof.first().getAttribute("href")).toContain("cluster=devnet")
+  await expect(page.getByRole("link", { name: "JSON" })).toHaveAttribute("href", new RegExp(`date=${proofDate}`))
+  await page.getByLabel("UTC date").fill("2026-09-01")
   await expect(page.getByText("No prints for this date")).toBeVisible()
 
   await page.goto(`${WEB}/about`)
@@ -137,9 +138,10 @@ test("home, explorer and about render live devnet state", async ({ page }) => {
   mkdirSync("evidence", { recursive: true })
   for (const width of [375, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 })
-    for (const route of ["/", "/explorer", "/about"]) {
+    for (const route of ["/", `/explorer?date=${proofDate}`, "/about"]) {
       await page.goto(`${WEB}${route}`)
       await expect(page.locator("main")).toBeVisible()
+      if (route.includes("date=")) await expect(page.locator(`a[href*="${proofSignature}"]`).first()).toBeVisible()
       if (route === "/about") await expect(page.getByText("Mainnet is not deployed")).toBeVisible()
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)
       expect(overflow, `${route} overflows at ${width}px`).toBe(true)

@@ -1,27 +1,40 @@
 import { useQuery } from "@tanstack/react-query"
-import { useMemo } from "react"
-import { useSearchParams } from "react-router"
+import { useEffect, useState } from "react"
+import { Link, useSearchParams } from "react-router"
+import { paths } from "@/app/paths"
 import { ChainLink } from "@/components/public/chain-link"
-import { ageLabel, clampUtcDate, formatShares, utcClock, utcToday, utcWindow } from "@/components/public/format"
+import { ageLabel, clampUtcDate, formatShares, PROOF_TAPE_DATE, utcClock, utcToday, utcWindow } from "@/components/public/format"
 import { EmptyBlock, ErrorBlock, LoadingBlock, Panel } from "@/components/public/states"
 import { api, queryKeys, useSymbols, type Pair, type Print, type TapeQuery } from "@/lib/api"
 import { explorerUrl } from "@/lib/cluster"
 import { formatUsd } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
-const WINDOW = 30
+const WIDE = "(min-width: 1024px)"
+
+function useWideTable() {
+  const [wide, setWide] = useState(() => window.matchMedia(WIDE).matches)
+  useEffect(() => {
+    const query = window.matchMedia(WIDE)
+    const apply = () => setWide(query.matches)
+    apply()
+    query.addEventListener("change", apply)
+    return () => query.removeEventListener("change", apply)
+  }, [])
+  return wide
+}
 
 function chipsFor(pairs: Pair[], symbol: string): Pair[] {
   return symbol ? pairs.filter((pair) => pair.symbol === symbol) : pairs
 }
 
-function TapeTable({ prints }: { prints: Print[] }) {
+function TapeTable({ prints, wide }: { prints: Print[]; wide: boolean }) {
   if (prints.length === 0) {
     return <EmptyBlock title="No prints for this date" detail="The first confirmed swap on this UTC date shows up here. Nothing is filled in while the tape is empty." />
   }
-  return (
-    <>
-    <ul className="grid gap-2 p-3 lg:hidden">
+  if (!wide) {
+    return (
+    <ul className="grid gap-2 p-3">
       {prints.map((print) => (
         <li key={`${print.signature}-${print.event_index}`} className="grid grid-cols-2 gap-x-3 gap-y-1 border-b pb-2 text-xs last:border-0">
           <span className="font-mono">{utcClock(print.time)} UTC</span>
@@ -33,7 +46,10 @@ function TapeTable({ prints }: { prints: Print[] }) {
         </li>
       ))}
     </ul>
-    <div className="hidden max-w-full overflow-x-auto lg:block">
+    )
+  }
+  return (
+    <div className="max-w-full overflow-x-auto">
       <table className="w-full text-left text-xs">
         <thead className="text-muted-foreground">
           <tr>
@@ -71,14 +87,15 @@ function TapeTable({ prints }: { prints: Print[] }) {
         </tbody>
       </table>
     </div>
-    </>
   )
 }
 
 export function TapePage() {
   const [params, setParams] = useSearchParams()
-  const window = useMemo(() => utcWindow(WINDOW), [])
-  const date = clampUtcDate(params.get("date") ?? utcToday(), window)
+  const wide = useWideTable()
+  const requested = params.get("date") ?? utcToday()
+  const picker = utcWindow(35)
+  const date = clampUtcDate(requested, picker)
   const sideParam = params.get("side")
   const side = sideParam === "buy" || sideParam === "sell" ? sideParam : undefined
   const symbol = (params.get("symbol") ?? "").toUpperCase()
@@ -146,21 +163,26 @@ export function TapePage() {
           Date
           <input
             type="date"
-            aria-label="Date, last 30 days"
+            aria-label="UTC date"
             className="h-8 rounded-md border bg-background px-2 text-sm text-foreground"
-            min={window.min}
-            max={window.max}
+            min={picker.min}
+            max={picker.max}
             value={date}
             onChange={(event) => set("date", event.target.value || null)}
           />
         </label>
+        {PROOF_TAPE_DATE >= picker.min && PROOF_TAPE_DATE <= picker.max && (
+          <Link to={`${paths.explorer}?date=${PROOF_TAPE_DATE}`} className="text-sm underline" aria-current={date === PROOF_TAPE_DATE ? "page" : undefined}>
+            {PROOF_TAPE_DATE} tape
+          </Link>
+        )}
         <a className="ml-auto text-sm underline" href={api.tapeUrl(query)} target="_blank" rel="noreferrer">JSON</a>
       </div>
       {symbols.isError && <p className="text-xs text-muted-foreground">Symbol list unavailable: {symbols.error.message}</p>}
       <Panel title={`${tape.data?.count ?? "—"} prints · ${date} UTC`}>
         {tape.isPending ? <div className="p-3"><LoadingBlock label="Loading prints" /></div>
           : tape.isError ? <div className="p-3"><ErrorBlock title="The tape is unavailable" error={tape.error} onRetry={() => void tape.refetch()} /></div>
-          : <TapeTable prints={tape.data.prints} />}
+          : <TapeTable prints={tape.data.prints} wide={wide} />}
       </Panel>
     </div>
   )

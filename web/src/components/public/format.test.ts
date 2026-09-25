@@ -11,6 +11,13 @@ describe("public date window", () => {
     expect(clampUtcDate("2026-12-01", utcWindow(30, now))).toBe("2026-09-25")
     expect(clampUtcDate("not-a-date", utcWindow(30, now))).toBe("2026-09-25")
   })
+
+  it("keeps 2026-09-25 selectable after that UTC day ends", () => {
+    const afterMidnight = new Date("2026-09-26T00:30:00Z")
+    const window = utcWindow(35, afterMidnight)
+    expect(window.max).toBe("2026-09-26")
+    expect(clampUtcDate("2026-09-25", window)).toBe("2026-09-25")
+  })
 })
 
 describe("public links", () => {

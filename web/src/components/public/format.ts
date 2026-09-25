@@ -4,7 +4,10 @@ export function utcToday(now = new Date()): string {
   return now.toISOString().slice(0, 10)
 }
 
-/** Inclusive UTC day window ending today. The explorer picker is 30 days. */
+/** UTC day the recorded devnet public swap is printed. Stays selectable while retention covers it. */
+export const PROOF_TAPE_DATE = "2026-09-25"
+
+/** Inclusive UTC day window ending today. The explorer picker covers at least 30 days, and the API retention when that is longer. */
 export function utcWindow(days: number, now = new Date()): { min: string; max: string } {
   const max = utcToday(now)
   const [year, month, day] = max.split("-").map(Number)

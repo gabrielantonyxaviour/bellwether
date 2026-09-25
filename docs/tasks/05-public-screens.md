@@ -16,3 +16,7 @@ Verify: blk_ui_public.
 - **Harness verdict:** `ABEL_URL=http://localhost:4179 npm run graph -- verify --product prod_081357ef-1e52-421c-ad10-8a03a624f889 --version 1.0.0 --block blk_ui_public --provider grok --wait` **passed** (`pass npx playwright test tests/e2e/public.spec.ts`).
 - **Coordinator / Gabriel:** Nothing to decide. The accept run uses the live devnet services rather than a fresh fork on 8990/8991, because devnet was already serving the tape and the harness budget is five minutes. Fork signatures are on About and only resolve on the machine running that fork.
 
+## Follow-up — historical tape date
+
+`/explorer?date=2026-09-25` keeps the 25 Sep UTC tape selectable for the 35-day retention window, including after that UTC day ends. The page shows one signature link at the current width, so the fresh-wallet print `publicFreshSwap` stays visible at 375, 768, and 1440. A "2026-09-25 tape" link sits next to the date field. Playwright asserts that link is the first visible match for the signature.
+
