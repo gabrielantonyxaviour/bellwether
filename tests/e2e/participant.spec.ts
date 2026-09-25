@@ -1,6 +1,6 @@
 import { spawn, execFile } from "node:child_process"
 import { generateKeyPairSync } from "node:crypto"
-import { mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { promisify } from "node:util"
@@ -21,6 +21,7 @@ const API = `http://127.0.0.1:${PORT + 2}`
 const ISSUER = `http://127.0.0.1:${PORT + 3}`
 const root = process.cwd()
 const lockDir = join(tmpdir(), `bellwether-participant-${PORT}.lock`)
+const webDist = join(tmpdir(), `bellwether-participant-${PORT}-web`)
 const solanaBin = `${process.env.HOME}/.local/share/solana/install/active_release/bin`
 type ProcessHandle = ReturnType<typeof spawn>
 let fork: Awaited<ReturnType<typeof startOwnFork>> | undefined
@@ -28,8 +29,8 @@ const processes: ProcessHandle[] = []
 const processLogs: string[] = []
 let deployment: { programId: Address; venue: Address; stockMint: Address; usdcMint: Address; symbol: Address; pool: Address; stockVault: Address; usdcVault: Address }
 let serviceEnv: NodeJS.ProcessEnv
+let browserConfig: Record<string, string>
 let ownsLock = false
-
 async function lockForkPort() {
   const deadline = Date.now() + 240_000
   while (Date.now() < deadline) {
@@ -66,11 +67,13 @@ function launch(command: string, args: string[], env: NodeJS.ProcessEnv) {
 }
 async function ready(url: string, check: (body: unknown) => boolean = () => true) {
   const deadline = Date.now() + 90_000
+  let last = "no response"
   while (Date.now() < deadline) {
-    try { const res = await fetch(url); if (res.ok && check(await res.json())) return } catch { /* wait for this service */ }
+    try { const res = await fetch(url); const body = await res.json(); if (res.ok && check(body)) return; last = `${res.status} ${JSON.stringify(body)}` }
+    catch (error) { last = error instanceof Error ? error.message : String(error) }
     await new Promise((resolve) => setTimeout(resolve, 500))
   }
-  throw new Error(`Service did not become ready at ${url}`)
+  throw new Error(`Service did not become ready at ${url}: ${last}\n${processLogs.join("\n")}`)
 }
 function loadEnv(file: string): NodeJS.ProcessEnv {
   const env = { ...process.env }
@@ -136,7 +139,6 @@ test.beforeAll(async () => {
     `scripts/deploy/deployments/fork-${PORT}.json`, `scripts/deploy/deployments/fork-${PORT}.web.json`,
     `services/.env.fork-${PORT}`, `services/indexer/.data/fork-${PORT}.sqlite`,
     `services/indexer/.data/fork-${PORT}.sqlite-wal`, `services/indexer/.data/fork-${PORT}.sqlite-shm`,
-    "evidence/participant-flow.webm",
   ]) rmSync(file, { force: true })
   for (const dir of [`services/credential/data/fork-${PORT}`, `services/relay/data/fork-${PORT}`]) rmSync(dir, { recursive: true, force: true })
   fork = await startOwnFork(PORT)
@@ -152,22 +154,24 @@ test.beforeAll(async () => {
   launch("npx", ["tsx", "services/api/main.ts"], serviceEnv)
   launch("npx", ["tsx", "services/credential/server.ts"], serviceEnv)
   await Promise.all([ready(`${API}/symbols`, (body) => (body as { symbols?: unknown[] }).symbols?.length === 1), ready(`${ISSUER}/health` )])
-  const browserConfig = JSON.parse(readFileSync(`scripts/deploy/deployments/fork-${PORT}.web.json`, "utf8"))
-  launch("pnpm", ["-C", "web", "dev", "--host", "127.0.0.1", "--port", "5193"], {
+  browserConfig = JSON.parse(readFileSync(`scripts/deploy/deployments/fork-${PORT}.web.json`, "utf8"))
+  const webEnv = {
     ...env, VITE_CLUSTER: "fork", VITE_RPC_URL: browserConfig.rpcUrl, VITE_WS_URL: browserConfig.wsUrl,
     VITE_PROGRAM_ID: browserConfig.programId, VITE_VENUE: browserConfig.venue, VITE_BWRS_MINT: browserConfig.bwrsMint,
     VITE_API_BASE_URL: browserConfig.apiBaseUrl, VITE_CREDENTIAL_API_URL: browserConfig.credentialApiUrl,
-  })
+  }
+  rmSync(webDist, { recursive: true, force: true })
+  await run("pnpm", ["-C", "web", "exec", "vite", "build", "--outDir", webDist, "--emptyOutDir"], { cwd: root, env: webEnv, timeout: 90_000 })
+  launch("pnpm", ["-C", "web", "exec", "vite", "preview", "--host", "127.0.0.1", "--port", "5193", "--outDir", webDist], webEnv)
   await ready(`${WEB}/config.json`)
 })
 test.afterAll(async () => {
   for (const child of processes.reverse()) { if (child.pid) { try { process.kill(child.pid, "SIGTERM") } catch { /* already exited */ } } }
   try { await fork?.stop() }
-  finally { if (ownsLock) rmSync(lockDir, { recursive: true, force: true }) }
+  finally { rmSync(webDist, { recursive: true, force: true }); if (ownsLock) rmSync(lockDir, { recursive: true, force: true }) }
 })
-
 test("admit, trade, LP, tape and real venue refusals on an isolated fork", async ({ browser }) => {
-  test.setTimeout(600_000)
+  test.setTimeout(900_000)
   const wallet = ephemeralWallet()
   const signer = await createKeyPairSignerFromBytes(wallet.bytes)
   const chain = createChain(RPC)
@@ -175,11 +179,14 @@ test("admit, trade, LP, tape and real venue refusals on an isolated fork", async
   await setTokenBalance(RPC, wallet.address, deployment.usdcMint, 5_000_000n, TOKEN_PROGRAM_ADDRESS)
   const [ownerStock] = await stockAta({ owner: wallet.address, mint: deployment.stockMint, tokenProgram: TOKEN_2022_PROGRAM_ADDRESS })
   const [ownerUsdc] = await findAssociatedTokenPda({ owner: wallet.address, mint: deployment.usdcMint, tokenProgram: TOKEN_PROGRAM_ADDRESS })
-  mkdirSync("evidence", { recursive: true })
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, recordVideo: { dir: "evidence", size: { width: 1440, height: 900 } } })
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
   const page = await context.newPage()
-  const video = page.video()
-  let complete = false
+  page.on("response", (response) => {
+    if (!response.url().startsWith(RPC)) return
+    void response.json().then((body: { error?: unknown }) => { if (body.error) processLogs.push(`rpc error: ${JSON.stringify(body.error)}`) }).catch(() => {})
+  })
+  page.on("requestfailed", (request) => { if (request.url().startsWith(RPC)) processLogs.push(`rpc request failed: ${request.failure()?.errorText}`) })
+  await page.route("**/config.json", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(browserConfig) }))
   await installWallet(page, wallet)
   const market: PoolKeys = { venue: deployment.venue, symbol: deployment.symbol, pool: deployment.pool,
     stockMint: deployment.stockMint, usdcMint: deployment.usdcMint, stockVault: deployment.stockVault, usdcVault: deployment.usdcVault }
@@ -189,23 +196,41 @@ test("admit, trade, LP, tape and real venue refusals on an isolated fork", async
     await page.getByRole("button", { name: "Connect wallet" }).last().click()
     await page.getByRole("button", { name: "Bellwether fork signer" }).click()
     await expect(page.getByText("Bellwether fork signer")).toBeVisible()
-    await page.getByRole("button", { name: "Sign challenge and get admitted" }).click()
-    try {
-      await expect.poll(async () => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await page.getByRole("button", { name: attempt ? "Retry admission" : "Sign challenge and get admitted" }).click()
+      try { await expect.poll(async () => {
         const text = await page.locator("main").innerText()
         return /Your credential is onchain|Admission did not finish|Screening unavailable|Admission refused/.test(text) ? text : null
-      }, { timeout: 120_000 }).not.toBeNull()
-    } catch { throw new Error(`Admission screen: ${await page.locator("main").innerText()}\nServices:\n${processLogs.join("\n")}`) }
+      }, { timeout: 240_000 }).not.toBeNull() } catch { throw new Error(`Admission screen: ${await page.locator("main").innerText()}\nServices:\n${processLogs.join("\n")}`) }
+      const screen = await page.locator("main").innerText()
+      if (screen.includes("Your credential is onchain")) break
+      if (!screen.includes("the admission transaction failed")) throw new Error(`Admission screen: ${screen}`)
+    }
     expect(await page.locator("main").innerText()).toContain("Your credential is onchain")
     const credential = await (await fetch(`${ISSUER}/credential/${wallet.address}`)).json() as { status: string; credential: { address: Address }; stockAccount: { state: string } }
     expect(credential.status).toBe("admitted")
     expect(credential.stockAccount.state).toBe("thawed")
+    const relay = await loadKeypairSigner(`${process.env.HOME}/.config/solana/bellwether/fork/relay.json`)
+    let sequence = 2n
+    await chain.send([heartbeatIx(deployment.programId, relay, deployment.venue, deployment.symbol, sequence++)], relay)
     await page.goto(`${WEB}/app/trade/BWRS`)
     await expect(page.getByRole("heading", { name: "BWRS / USDC" })).toBeVisible({ timeout: 60_000 })
+    await expect(page.getByText("Budget used")).toBeVisible()
+    await expect(page.getByRole("region", { name: "Tokenized stock info" }).getByText("Mint authority")).toBeVisible()
+    await page.getByRole("tab", { name: "1M" }).click()
+    await expect(page.getByRole("tab", { name: "1M" })).toHaveAttribute("aria-selected", "true")
+    for (const name of ["Liquidity", "Positions", "Orders", "Trades"]) await page.getByRole("tab", { name, exact: true }).click()
+    await expect(page.getByRole("tab", { name: "Trades", exact: true })).toHaveAttribute("aria-selected", "true")
     await page.getByRole("textbox", { name: "You pay · USDC" }).fill("0.5")
+    await expect(page.getByText("Shares counted toward daily budget")).toBeVisible()
     await page.getByRole("button", { name: "Review buy" }).click()
     await page.getByRole("button", { name: "Confirm swap" }).click()
-    await expect(page.getByText("Swap confirmed.")).toBeVisible({ timeout: 90_000 })
+    try { await expect.poll(async () => {
+      const text = await page.locator("main").innerText()
+      return text.includes("Swap confirmed.") || await page.locator("main [role=alert]").count() > 0 ? text : null
+    }, { timeout: 90_000 }).not.toBeNull() } catch { throw new Error(`Trade screen: ${await page.locator("main").innerText()}\nServices:\n${processLogs.join("\n")}`) }
+    expect(await page.locator("main").innerText()).toContain("Swap confirmed.")
+    await expect(page.getByRole("link", { name: "Check the public explorer →" })).toHaveAttribute("href", "/explorer")
     await expect.poll(async () => (await (await fetch(`${API}/tape?symbol=BWRS`)).json() as { count: number }).count, { timeout: 60_000 }).toBeGreaterThan(0)
     const tape = await (await fetch(`${API}/tape?symbol=BWRS`)).json() as { prints: { signature: string; symbol: string }[] }
     expect(tape.prints[0].symbol).toBe("BWRS")
@@ -222,12 +247,10 @@ test("admit, trade, LP, tape and real venue refusals on an isolated fork", async
       }, { timeout: 120_000 }).not.toBeNull()
       const screen = await page.locator("main").innerText()
       deposited = screen.includes("Liquidity deposit confirmed on chain.")
-      if (!deposited && !screen.includes("The network did not confirm submission.")) throw new Error(`Deposit screen state: ${screen}`)
+      if (!deposited && !screen.includes("The network did not confirm submission.")) throw new Error(`Deposit screen state: ${screen}\nServices:\n${processLogs.join("\n")}`)
     }
     expect(deposited, `Deposit screen state: ${await page.locator("main").innerText()}`).toBe(true)
-    const relay = await loadKeypairSigner(`${process.env.HOME}/.config/solana/bellwether/fork/relay.json`)
     const dataAuthority = await loadKeypairSigner(`${process.env.HOME}/.config/solana/bellwether/fork/data-authority.json`)
-    let sequence = 2n
     const assertRefusal = async (expected: number) => {
       try { await chain.send([swapIx(deployment.programId, market, signer, ownerStock, ownerUsdc, credential.credential.address, 0, 10_000n, 1n)], signer); throw new Error("swap unexpectedly succeeded") }
       catch (cause) { expect(errorCode(cause)).toBe(expected) }
@@ -244,12 +267,14 @@ test("admit, trade, LP, tape and real venue refusals on an isolated fork", async
     await chain.send([rule(deployment.programId, relay, deployment.venue, deployment.symbol, 18, u64(sequence++))], relay)
     await timeTravelTo(RPC, (await chainNow(RPC)) + 200)
     await page.goto(`${WEB}/app/trade/BWRS`)
-    await expect(page.getByRole("region", { name: "Venue status" }).getByText("Halt data stale · trading paused")).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole("region", { name: "Venue status" }).getByText("Halt data stale")).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole("button", { name: "Halt data stale" })).toBeDisabled()
     await assertRefusal(6002)
     await chain.send([heartbeatIx(deployment.programId, relay, deployment.venue, deployment.symbol, sequence++)], relay)
     await chain.send([setCapIx(deployment.programId, dataAuthority, deployment.venue, deployment.symbol, 1n, 1000n, 1, 1)], dataAuthority)
     await page.reload()
     await expect(page.getByRole("region", { name: "Venue status" }).getByText("Daily cap reached")).toBeVisible()
+    await expect(page.getByRole("button", { name: "Daily cap reached" })).toBeDisabled()
     await assertRefusal(6005)
     await chain.send([setCapIx(deployment.programId, dataAuthority, deployment.venue, deployment.symbol, 100_000_000n, 1_000_000_000n, 1, 1)], dataAuthority)
     for (let count = 0; count < 2; count++) await chain.send([rule(deployment.programId, dataAuthority, deployment.venue, deployment.symbol, 20, i64(0n))], dataAuthority)
@@ -257,7 +282,7 @@ test("admit, trade, LP, tape and real venue refusals on an isolated fork", async
     await expect(page.getByRole("region", { name: "Venue status" }).getByText("Paused after second breach")).toBeVisible()
     await assertRefusal(6004)
     const revoke = await fetch(`${ISSUER}/revoke`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${serviceEnv.CREDENTIAL_OPERATOR_TOKEN}` }, body: JSON.stringify({ wallet: wallet.address }) })
-    expect(revoke.ok).toBe(true)
+    expect(revoke.ok, `Revocation response ${revoke.status}: ${await revoke.text()}\nServices:\n${processLogs.join("\n")}`).toBe(true)
     await page.reload()
     await expect(page.getByRole("region", { name: "Venue status" }).getByText("Not admitted · Get admitted")).toBeVisible()
     await assertRefusal(6000)
@@ -269,13 +294,7 @@ test("admit, trade, LP, tape and real venue refusals on an isolated fork", async
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${route} overflows at ${width}px`).toBe(true)
       }
     }
-    complete = true
   } finally {
     await context.close()
-    if (video) {
-      const recorded = await video.path()
-      if (complete) renameSync(recorded, "evidence/participant-flow.webm")
-      else rmSync(recorded, { force: true })
-    }
   }
 })

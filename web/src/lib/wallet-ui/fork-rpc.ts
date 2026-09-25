@@ -1,6 +1,7 @@
-import { createDefaultRpcTransport, createSolanaRpcFromTransport, type Base64EncodedWireTransaction } from "@solana/kit"
+import { z } from "zod"
 
 const upstreamFetchFailure = /Failed to fetch accounts from remote/i
+const sendResponse = z.object({ result: z.string().optional(), error: z.object({ message: z.string() }).optional() })
 
 export function isRetryableForkSendError(error: unknown): boolean {
   return error instanceof Error && upstreamFetchFailure.test(error.message)
@@ -17,17 +18,30 @@ export function preserveForkSendError(payload: unknown, response: unknown): unkn
   throw new Error(`RPC preflight rejected without simulation data: ${message}`)
 }
 
-/** Retry only a fork's upstream account fetch, which fails before transaction execution. */
+/**
+ * Send without Kit's response parser. Surfpool's preflight error has no `data`, and Kit
+ * turns that into "Cannot destructure property 'err'". Retry the upstream account fetch.
+ */
 export async function sendForkTransaction(rpcUrl: string, wire: string) {
-  const transport = createDefaultRpcTransport({ url: rpcUrl })
-  const rpc = createSolanaRpcFromTransport((async (request) =>
-    preserveForkSendError(request.payload, await transport(request))) as typeof transport)
-  for (let attempt = 0; ; attempt++) {
+  let last = "fork send failed"
+  for (let attempt = 0; attempt < 4; attempt++) {
     try {
-      return await rpc.sendTransaction(wire as Base64EncodedWireTransaction, { encoding: "base64", skipPreflight: true, preflightCommitment: "confirmed" }).send()
+      const response = await fetch(rpcUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "sendTransaction", params: [wire, { encoding: "base64", skipPreflight: true }] }),
+        signal: AbortSignal.timeout(8_000),
+      })
+      const body = sendResponse.parse(await response.json())
+      if (typeof body.result === "string" && body.result.length > 0) return body.result
+      last = body.error?.message ?? `HTTP ${response.status}`
+      if (!upstreamFetchFailure.test(last)) throw new Error(last)
     } catch (error) {
-      if (attempt >= 2 || !isRetryableForkSendError(error)) throw error
-      await new Promise((resolve) => setTimeout(resolve, 800 * 2 ** attempt))
+      last = error instanceof Error ? error.message : String(error)
+      const timedOut = error instanceof DOMException || /aborted|timeout/i.test(last)
+      if (attempt === 3 || (!timedOut && !upstreamFetchFailure.test(last))) throw error instanceof Error ? error : new Error(last)
     }
+    await new Promise((resolve) => setTimeout(resolve, 400))
   }
+  throw new Error(last)
 }
