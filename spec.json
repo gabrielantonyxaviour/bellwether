@@ -1500,7 +1500,7 @@
       },
       "requirements": [
         {
-          "text": "The public URL serves /, /tape, /app/trade/<symbol>, /operator and /proof with HTTP 200 and live data",
+          "text": "The public URL serves /, /explorer, /app/trade/<symbol>, /operator and /about with HTTP 200 and live data",
           "accept": {
             "cmd": "npx tsx checks/public-url.ts"
           }
@@ -1514,7 +1514,7 @@
   "done": [
     {
       "id": "done_mainnet_proof",
-      "condition": "Mainnet evidence exists and is linked on /proof: executable program id, \u22651 admitted swap, \u22651 NotAdmitted rejection, \u22651 CapReached rejection, and a TradingHalted rejection from a relayed real Nasdaq halt (or, if no mapped halt occurs in time, the fork's relayed-halt evidence labelled as such)",
+      "condition": "Mainnet evidence exists and is linked on /about: executable program id, \u22651 admitted swap, \u22651 NotAdmitted rejection, \u22651 CapReached rejection, and a TradingHalted rejection from a relayed real Nasdaq halt (or, if no mapped halt occurs in time, the fork's relayed-halt evidence labelled as such)",
       "why": "Every block can pass on the fork; only this proves the product is live on mainnet as Gabriel asked",
       "blocks": [
         "blk_mainnet_deploy",
@@ -1763,7 +1763,7 @@
         "Open /app/onboard and connect the wallet",
         "Request admission: the wallet is screened against the OFAC SDN address list and a test-admission attestation is issued; the rehearsal-stock account is thawed",
         "Open /app/trade/<symbol> and swap USDC for the rehearsal stock",
-        "Open /tape",
+        "Open /explorer",
         "Failure: a wallet on the SDN fixture list is refused admission",
         "Failure: a wallet without a credential attempts a swap and the program rejects it with NotAdmitted"
       ],
@@ -1855,8 +1855,8 @@
       "startingState": "Mainnet deployment live with smoke transactions recorded.",
       "actions": [
         "Open /",
-        "Open /tape",
-        "Open /proof and follow explorer links"
+        "Open /explorer",
+        "Open /about and follow explorer links"
       ],
       "expectedVisible": "Home states what Bellwether is and links to trade, tape and proof; tape lists prints; proof lists program id, accounts and signatures with working explorer links and the real-vs-stand-in table.",
       "expectedData": "Explorer links resolve to the recorded mainnet signatures and executable program id."
