@@ -235,11 +235,14 @@ function loadEnv(file: string): NodeJS.ProcessEnv {
   return env
 }
 
+/** Mainnet Surfpool upstream: the local Alchemy devnet URL with the cluster host swapped. Never logged. */
 function datasourceRpcUrl(): string {
-  if (process.env.SURFPOOL_DATASOURCE_RPC_URL) return process.env.SURFPOOL_DATASOURCE_RPC_URL
+  let upstream: string | undefined
   try {
-    const upstream = loadEnv("services/.env.devnet").RPC_UPSTREAM_URL_ALCHEMY
-    if (upstream?.includes("solana-devnet")) return upstream.replace("solana-devnet", "solana-mainnet")
-  } catch { /* local devnet env is optional */ }
-  return "https://api.mainnet.solana.com"
+    upstream = loadEnv("services/.env.devnet").RPC_UPSTREAM_URL_ALCHEMY?.trim().replace(/^["']|["']$/g, "")
+  } catch { /* missing env file fails below */ }
+  if (!upstream?.includes("solana-devnet")) {
+    throw new Error("Operator fork needs RPC_UPSTREAM_URL_ALCHEMY in services/.env.devnet, with a solana-devnet host, so it can derive the mainnet datasource")
+  }
+  return upstream.replace("solana-devnet", "solana-mainnet")
 }
