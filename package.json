@@ -22,6 +22,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "1.59.1",
     "@types/node": "^26.6.2",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3"
