@@ -25,3 +25,49 @@ assertions for both routes (draft shows the fork venue's real program id; report
 its existing 46 assertions.
 
 Verify: blk_credentials and blk_tape.
+
+## bw-integration report — 2026-09-25
+
+Implemented in `222dd98` and `e45482b` (`services/credential/**`, `services/api/**`,
+`checks/credentials.ts`, `checks/tape.ts`); signed browser helper in `d0cb649`
+(`web/src/lib/api.ts`, `web/src/lib/api.test.ts`). `pnpm-workspace.yaml` belongs to
+another workstream and was not committed here.
+
+- `GET /admit/challenge?wallet=<base58>` returns `{wallet,message,expiresAt,expiresAtUnix}`.
+  Sign the **exact UTF-8 bytes** of `message` using the connected wallet's Solana
+  `signMessage`. `POST /admit` accepts `{wallet,message,signature}` with a 64-byte
+  Ed25519 signature encoded as base64 or base58. Browser helper sends base64.
+  Challenges expire after five minutes and are single-use. Missing, mismatched,
+  invalid, or replayed proof returns `401 {error,code:"INVALID_PROOF"}`.
+  Operator bearer admission remains available for authorized operation.
+- Challenge requests are limited per IP and wallet. Mainnet admission defaults to
+  ten new credentials per UTC day (`CREDENTIAL_DAILY_CAP`); devnet/fork credential
+  admission is uncapped. Limits return 429 with `RATE_LIMITED` or `DAILY_CAP`.
+- Fresh devnet admissions top up to 0.01 fee SOL and 1 test USDC from the payer,
+  transferring only each wallet's shortfall. Funding happens once per wallet and
+  is capped at 20 funded wallets per UTC day by default. Config permits no more
+  than 0.05 SOL and 5 test USDC targets. Mainnet has no funding path. Funding
+  failure returns `502 {error,code:"FUNDING_UNAVAILABLE"}`; the wallet can retry.
+  The admit response includes a `funding` result on devnet.
+- `GET /notice/draft`, `GET /rehearsal/fwdi`, and `GET /market/FWDI` are live API
+  routes. The market route proxies validated daily Yahoo chart data with a
+  five-minute cache and accepts `range=1mo|3mo|6mo|1y&interval=1d`.
+  `GET /rehearsal/fwdi?refresh=1` needs an operator bearer token and is limited
+  to once per ten minutes. API CORS allows `https://bellwether.larinova.com`
+  plus localhost/127.0.0.1. `/halts.source` is a feed label, never a local path;
+  public status fields and errors do not expose local paths or stacks.
+
+Checks: service tests 16/16; credential fork check 36/36; tape fork check passed;
+service typecheck passed. Abel harness re-verification returned **passed** for
+`blk_credentials` and **passed** for `blk_tape`. Browser helper tests 3/3 and
+web typecheck passed. A concurrent full web test run was 35/36: the one failing
+test is `src/components/operator/budget.test.ts` (notice activation label),
+outside these changed files. The direct admission tests pass.
+
+Public devnet status: bw-fork reported a fresh-wallet signed admission that
+funded 0.01 SOL and test USDC, followed by an on-chain swap visible on the
+public tape. Our live read-only audit of `https://bellwether-api.larinova.com`
+found 200 responses on `/`, `/halts`, `/venue`, `/symbols`, `/tape`,
+`/notice/draft`, and `/rehearsal/fwdi`; allowed and denied CORS origins behaved
+as specified, and sampled JSON contained no local paths or stack traces.
+The public API hostname is `bellwether-api.larinova.com`.
