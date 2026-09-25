@@ -90,3 +90,24 @@ test("429 receives jittered backoff and a confirmed transaction is cached perman
   assert.equal(calls, 3)
   assert.deepEqual(waits, [150, 300])
 })
+
+test("Free-tier getProgramAccounts limitation falls back and caches for 20 seconds", async () => {
+  let now = 0
+  const urls: string[] = []
+  const gateway = createRpcGateway({ primary: "https://primary.example", fallbacks: ["https://fallback.example"], now: () => now,
+    fetchImpl: async (url, init) => {
+      urls.push(String(url))
+      const request = JSON.parse(String(init?.body))
+      if (String(url).includes("primary")) return Response.json({ jsonrpc: "2.0", id: request.id,
+        error: { code: -32601, message: "getProgramAccounts is not available on the Free tier" } })
+      return Response.json({ jsonrpc: "2.0", id: request.id, result: [{ pubkey: "account" }] })
+    } })
+  const request = call("getProgramAccounts", ["program"])
+  assert.equal((await gateway(request)).status, 200)
+  now = 19_000
+  await gateway(request)
+  assert.equal(urls.length, 2)
+  now = 21_000
+  await gateway(request)
+  assert.equal(urls.length, 4)
+})

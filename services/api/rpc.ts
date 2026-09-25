@@ -78,7 +78,12 @@ export function createRpcGateway(options: {
 
   async function call(request: RpcRequest): Promise<unknown> {
     for (const url of urls) {
-      try { return await upstream(url, request) } catch { /* next configured upstream */ }
+      try {
+        const response = await upstream(url, request) as { error?: { message?: string } }
+        if (request.method === "getProgramAccounts" &&
+          /not available on the Free tier/i.test(response.error?.message ?? "")) continue
+        return response
+      } catch { /* next configured upstream */ }
     }
     throw new Error("all upstreams unavailable")
   }
@@ -109,7 +114,8 @@ export function createRpcGateway(options: {
         const immutableTx = request.method === "getTransaction" && rpc.result != null &&
           (request.params[1] == null || (typeof request.params[1] === "object" &&
             [undefined, "confirmed", "finalized"].includes((request.params[1] as { commitment?: string }).commitment)))
-        cache.set(cacheKey, { until: immutableTx ? Number.POSITIVE_INFINITY : now() + CACHE_MS, value: rpc.result })
+        const ttl = request.method === "getProgramAccounts" ? 20_000 : CACHE_MS
+        cache.set(cacheKey, { until: immutableTx ? Number.POSITIVE_INFINITY : now() + ttl, value: rpc.result })
       }
       return { status: 200, body: { jsonrpc: "2.0", id: request.id, ...(rpc.error ? { error: rpc.error } : { result: rpc.result }) } }
     } catch { return error(503, "rpc_unavailable", "devnet RPC is unavailable") }

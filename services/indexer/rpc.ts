@@ -41,9 +41,11 @@ export class RpcError extends Error {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const b64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0))
 
-export function createIndexerRpc(url: string, opts: { commitment?: "confirmed" | "finalized"; retries?: number; timeoutMs?: number } = {}): IndexerRpc {
+export function createIndexerRpc(url: string, opts: { commitment?: "confirmed" | "finalized"; retries?: number; timeoutMs?: number; fallbackUrl?: string } = {}): IndexerRpc {
   const commitment = opts.commitment ?? "confirmed"
   const retries = opts.retries ?? 5
+  const fallback = opts.fallbackUrl && opts.fallbackUrl !== url
+    ? createIndexerRpc(opts.fallbackUrl, { commitment, retries, timeoutMs: opts.timeoutMs }) : null
   let id = 0
 
   async function call<T>(method: string, params: unknown[]): Promise<T> {
@@ -85,10 +87,15 @@ export function createIndexerRpc(url: string, opts: { commitment?: "confirmed" |
       return { slot: tx.slot, blockTime: tx.blockTime, err: tx.meta.err, logs: tx.meta.logMessages ?? [] }
     },
     async programAccounts(programId, filters) {
-      const rows = await call<{ pubkey: string; account: { data: [string, string] } }[]>(
-        "getProgramAccounts",
-        [programId, { commitment, encoding: "base64", filters }],
-      )
+      let rows: { pubkey: string; account: { data: [string, string] } }[]
+      try {
+        rows = await call("getProgramAccounts", [programId, { commitment, encoding: "base64", filters }])
+      } catch (error) {
+        if (fallback && error instanceof RpcError && /not available on the Free tier/i.test(error.message)) {
+          return fallback.programAccounts(programId, filters)
+        }
+        throw error
+      }
       return rows.map((r) => ({ pubkey: r.pubkey, data: b64(r.account.data[0]) }))
     },
     async multipleAccounts(addresses) {

@@ -17,7 +17,7 @@ async function main() {
   const store = await SqlTapeStore.open(driver)
   const indexer = new TapeIndexer({
     store,
-    rpc: createIndexerRpc(config.rpcUrl),
+    rpc: createIndexerRpc(config.rpcUrl, { fallbackUrl: process.env.RPC_FALLBACK_URLS?.split(",")[0]?.trim() }),
     programId: config.programId,
     wsUrl: config.wsUrl,
     pollMs: config.pollMs,
@@ -26,7 +26,7 @@ async function main() {
     backfillMax: config.backfillMax,
     log,
   })
-  log(`program ${config.programId} rpc ${config.rpcUrl} ws ${config.wsUrl ?? "off"} db ${config.dbPath} retention ${config.retentionDays}d`)
+  log(`program ${config.programId} rpc host ${new URL(config.rpcUrl).host} ws ${config.wsUrl ? new URL(config.wsUrl).host : "off"} db ${config.dbPath} retention ${config.retentionDays}d`)
   indexer.start()
   const shutdown = async () => {
     await indexer.stop()
