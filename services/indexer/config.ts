@@ -26,6 +26,7 @@ const blankToUndefined = (v: unknown) => (typeof v === "string" && v.trim() === 
 
 const EnvSchema = z.object({
   BELLWETHER_PROGRAM_ID: base58,
+  BELLWETHER_POOL_ACCOUNTS: z.preprocess(blankToUndefined, z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}(,[1-9A-HJ-NP-Za-km-z]{32,44})*$/).optional()),
   BELLWETHER_CLUSTER: z.enum(CLUSTERS).default("mainnet"),
   BELLWETHER_RPC_URL: z.preprocess(blankToUndefined, z.string().url().optional()),
   BELLWETHER_WS_URL: z.preprocess(blankToUndefined, z.union([z.literal("off"), z.string().regex(/^wss?:\/\//, "must be ws:// or wss://")]).optional()),
@@ -41,6 +42,7 @@ const EnvSchema = z.object({
 
 export interface TapeConfig {
   programId: string
+  poolAccounts: string[] | undefined
   cluster: (typeof CLUSTERS)[number]
   rpcUrl: string
   wsUrl: string | undefined
@@ -67,6 +69,7 @@ export function loadTapeConfig(env: NodeJS.ProcessEnv = process.env): TapeConfig
   const wsUrl = e.BELLWETHER_WS_URL === "off" ? undefined : (e.BELLWETHER_WS_URL ?? wsUrlFor(rpcUrl, local))
   return {
     programId: e.BELLWETHER_PROGRAM_ID,
+    poolAccounts: e.BELLWETHER_POOL_ACCOUNTS?.split(","),
     cluster: e.BELLWETHER_CLUSTER,
     rpcUrl,
     wsUrl,

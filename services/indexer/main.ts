@@ -19,6 +19,7 @@ async function main() {
     store,
     rpc: createIndexerRpc(config.rpcUrl, { fallbackUrl: process.env.RPC_FALLBACK_URLS?.split(",")[0]?.trim() }),
     programId: config.programId,
+    poolAccounts: config.poolAccounts,
     wsUrl: config.wsUrl,
     pollMs: config.pollMs,
     poolRefreshMs: config.poolRefreshMs,

@@ -30,6 +30,7 @@ export function writeRuntime(d: Deployment): void {
   const env: Record<string, string> = {
     BELLWETHER_CLUSTER: d.cluster,
     BELLWETHER_PROGRAM_ID: d.programId,
+    ...(d.cluster === "fork" && d.pool ? { BELLWETHER_POOL_ACCOUNTS: d.pool } : {}),
     BELLWETHER_VENUE_PROGRAM_ID: d.programId,
     BELLWETHER_VENUE: d.venue,
     BELLWETHER_RPC_URL: d.rpcUrl,

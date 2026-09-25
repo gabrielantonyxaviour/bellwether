@@ -73,11 +73,11 @@ function symbolAccount(halted: boolean): Uint8Array {
   return d
 }
 
-async function setup() {
+async function setup(poolAccounts?: string[]) {
   const store = await SqlTapeStore.open(openNodeSqlite(":memory:"))
   const rpc = new FakeRpc()
   const indexer = new TapeIndexer({
-    store, rpc, programId: PROGRAM, pollMs: 60_000, poolRefreshMs: 60_000, retentionDays: 35, backfillMax: 100,
+    store, rpc, programId: PROGRAM, poolAccounts, pollMs: 60_000, poolRefreshMs: 60_000, retentionDays: 35, backfillMax: 100,
     now: () => NOW_S * 1000,
   })
   return { store, rpc, indexer }
@@ -129,6 +129,16 @@ test("pool refresh records fee and halt state, and snapshots reserves only when 
   assert.equal(await indexer.refreshPools(), 1)
   const eod = await store.eodPoolSize(POOL, "2026-09-25", NOW_S + 10)
   assert.deepEqual([eod!.reserveStock, eod!.source, eod!.time], [12_000_000_000n, "account", NOW_S + 5])
+})
+
+test("known fork pool refreshes without getProgramAccounts and fails if the pool is absent", async () => {
+  const { store, rpc, indexer } = await setup([POOL])
+  rpc.programAccounts = async () => { throw new Error("program scan unavailable") }
+  await assert.rejects(indexer.refreshPools(), /configured pool .* missing or invalid/)
+  rpc.accounts.set(POOL, poolAccount(10_000_000_000n, 250_000_000_000n))
+  rpc.accounts.set(SYMBOL_REC, symbolAccount(false))
+  assert.equal(await indexer.refreshPools(), 1)
+  assert.deepEqual((await store.listPools()).map((pool) => pool.pool), [POOL])
 })
 
 test("a backfill requested while one is walking queues exactly one more walk", async () => {

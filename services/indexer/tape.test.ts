@@ -135,6 +135,7 @@ test("environment contract: defaults, derived websocket URLs and refusals", asyn
   assert.deepEqual([c.cluster, c.rpcUrl, c.wsUrl, c.retentionDays, c.apiPort], ["mainnet", "https://api.mainnet-beta.solana.com", "wss://api.mainnet-beta.solana.com/", 35, 8787])
   assert.match(c.dbPath, /services\/indexer\/\.data\/tape\.sqlite$/)
   const local = loadTapeConfig({ BELLWETHER_PROGRAM_ID: PROGRAM, BELLWETHER_CLUSTER: "fork", BELLWETHER_RPC_URL: "http://127.0.0.1:8930" })
+  assert.deepEqual(loadTapeConfig({ BELLWETHER_PROGRAM_ID: PROGRAM, BELLWETHER_POOL_ACCOUNTS: POOL }).poolAccounts, [POOL])
   assert.equal(local.wsUrl, "ws://127.0.0.1:8931/")
   assert.equal(loadTapeConfig({ BELLWETHER_PROGRAM_ID: PROGRAM, BELLWETHER_WS_URL: "off" }).wsUrl, undefined)
   assert.throws(() => loadTapeConfig({}), /BELLWETHER_PROGRAM_ID/)

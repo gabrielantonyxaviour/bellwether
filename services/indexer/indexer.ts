@@ -15,6 +15,8 @@ export interface IndexerOptions {
   store: TapeStore
   rpc: IndexerRpc
   programId: string
+  /** Known pool addresses on a private fork; normal indexers discover every pool. */
+  poolAccounts?: string[]
   /** Omit to run on the backfill poll alone. */
   wsUrl?: string
   pollMs: number
@@ -131,9 +133,11 @@ export class TapeIndexer {
 
   /** Snapshots every pool account (reserves, fee, the symbol's halt and activation flags). */
   async refreshPools(): Promise<number> {
-    const found = await this.o.rpc.programAccounts(this.o.programId, [
-      { dataSize: POOL_LEN }, { memcmp: { offset: 0, bytes: "4" } }, // base58 of [3] = pool kind
-    ])
+    const found = this.o.poolAccounts
+      ? await this.knownPools()
+      : await this.o.rpc.programAccounts(this.o.programId, [
+        { dataSize: POOL_LEN }, { memcmp: { offset: 0, bytes: "4" } }, // base58 of [3] = pool kind
+      ])
     const pools = found.flatMap((a) => (decodePool(a.data) ? [a.pubkey] : []))
     this.state.lastPoolRefreshAt = this.now()
     if (pools.length === 0) return 0
@@ -161,6 +165,16 @@ export class TapeIndexer {
       changed++
     }
     return changed
+  }
+
+  private async knownPools() {
+    const pools = this.o.poolAccounts!
+    const { accounts } = await this.o.rpc.multipleAccounts(pools)
+    return pools.map((pubkey, index) => {
+      const data = accounts[index]
+      if (!data || !decodePool(data)) throw new Error(`configured pool ${pubkey} is missing or invalid`)
+      return { pubkey, data }
+    })
   }
 
   async prune(): Promise<number> {
