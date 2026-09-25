@@ -1,0 +1,44 @@
+[package]
+name = "bellwether_venue"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Bellwether venue: permissioned stock-vs-USDC pools with the TSV rulebook enforced on-chain"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+pinocchio = { version = "0.11.2", default-features = false, features = ["cpi"] }
+solana-address = { version = "2.6.1", default-features = false, features = ["decode", "syscalls"] }
+
+# Host builds (cargo test compiles the lib for the host) derive PDAs without syscalls.
+[target.'cfg(not(target_os = "solana"))'.dependencies]
+solana-address = { version = "2.6.1", features = ["curve25519"] }
+
+[dev-dependencies]
+litesvm = "0.16.0"
+solana-account = "4.3.0"
+solana-clock = "3.1.1"
+solana-instruction = "3.4.0"
+solana-instruction-error = "2.4.0"
+solana-keypair = "3.1.2"
+solana-message = "4.2.4"
+solana-signer = "3.0.1"
+solana-system-interface = { version = "3.2.0", features = ["bincode"] }
+solana-transaction = "4.1.5"
+solana-transaction-error = "3.3.1"
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+# Off: every user-sized sum is either bounded by token supply after a successful transfer
+# or explicitly checked (u128 intermediates, checked_add); checks would cost ~4.4 KB of rent.
+overflow-checks = false
+
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = ['cfg(target_os, values("solana"))']
