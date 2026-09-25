@@ -44,11 +44,11 @@ pub fn swap(program_id: &Address, accounts: &mut [AccountView], p: &[u8]) -> Pro
     let fee = mul_div_ceil(amount_in, m.fee_bps as u64, 10_000)?;
     let net = amount_in - fee;
     let out = mul_div(net, r_out, r_in.checked_add(net).ok_or(E::InvalidAmount)?)?;
+    let stock_leg = if dir == BUY { out } else { amount_in };
+    let fill = rules::budget(v, s, now, stock_leg)?;
     if out == 0 {
         return Err(E::InvalidAmount.into());
     }
-    let stock_leg = if dir == BUY { out } else { amount_in };
-    let fill = rules::budget(v, s, now, stock_leg)?;
     if out < min_out {
         return Err(E::SlippageExceeded.into());
     }
