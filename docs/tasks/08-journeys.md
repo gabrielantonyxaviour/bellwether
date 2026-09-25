@@ -38,6 +38,20 @@ After API commit `b135ba6`, public `OPTIONS /rpc` with `Access-Control-Request-H
 
 After the issuer service was routed through the local proxy and the test wallet's send bridge was changed to browser `fetch`, the complete generated `sc_participant_trade` Playwright test passed in 29.9 seconds. The test asserted a browser-origin `POST https://bellwether-api.larinova.com/rpc` with `solana-client: bellwether-journey` and JSON-RPC `sendTransaction` before the UI showed confirmation. Fresh wallet `Axdsf5PWi8revKLHebzY9uCZtK8EvyVKjGvg4DP2vReB` returned `admitted`, its stock account `thawed`, and [swap `5umpGDkW8i3vTxXZMQK3La2kchJwBjQpTNYCJrLcCmXU5o7tGfyougkKSdVr9R7qxwMSvCvAKXn5Summw63j5aak`](https://solscan.io/tx/5umpGDkW8i3vTxXZMQK3La2kchJwBjQpTNYCJrLcCmXU5o7tGfyougkKSdVr9R7qxwMSvCvAKXn5Summw63j5aak?cluster=devnet) finalized with `err: null` at slot `504069383`. The public tape row at `2026-09-25T16:14:05Z` reported buy, 0.050000 USDC and 0.005072 shares. The generated scenario also asserted the on-chain reserve/share movement, SDN fixture refusal, no-credential `NotAdmitted` preflight, and exact tape row. This is a local Playwright result, not an Abel recorded pass.
 
+### Blockhash-source regression run
+
+API commit `1a4fb6c` stopped caching `getLatestBlockhash` and `isBlockhashValid`. The proxy reads the lifetime blockhash from the signed transaction, sends to the upstream that issued it with matching preflight commitment, and on `Blockhash not found` retries the same wire once after one second before trying another upstream. Unit tests reproduced the upstream mismatch, fallback, and retry behavior; API tests passed 17/17 and TypeScript passed. After an exact-label service restart, `npx playwright test tests/scenarios/sc_participant_trade.spec.ts --repeat-each=5 --workers=1 --reporter=line` passed **5/5** fresh-wallet browser journeys in 2.4 minutes. Every run asserted a browser-origin `/rpc` `sendTransaction` with the `solana-client` header and completed admission, swap, SDN fixture refusal, no-credential preflight, reserve/share checks, and tape match.
+
+| Fresh wallet | Finalized swap signature | Slot |
+| --- | --- | --- |
+| `D2SPEWuuHjWhcm7AfExEZi4Xz9bLXpbRsNeW2gw35GG6` | `4yJTWYZfbHncKQH8ecfsPnL1WRWCpu1AkVJGWEKaYUJuFD5gxbS8ADS8sAxMELyjuzBRHtjbGT3jFX6YVXHLPbK5` | `504072627` |
+| `AcnGW1paMw233CAzGfzHu14a8KsNNDF7WP5mth9zkSeL` | `53tdY5hmyH2LKZrfSJm4rF7VeVHRrZhFpnbFJo8sFV9CSzNwGdMj5wi8rmSwUZRXmCtoMY42QAxqUawMyBcr8urQ` | `504072794` |
+| `39y7apzD7TNKBX51HUBhdrowLAunofUiE91eUW7zA5zf` | `2Wf3D9iMc3SRnAZjw1LG1zxcb65oU6m5MVyXn9hRJPY1f7ok14idqZCzqNoAckFFgE5A3pGTrovRnFMaVh7m2t22` | `504072929` |
+| `Ff3m8zcH5uZ5vB7gknRj7Ua7B3327iqUtkAuze6F7DnL` | `2FsAugqP3DSW413rXphMSfbYaSuxqDhHYJdo1n88M3YXmSAd83Mroc78Q8XmcK69t2CRKefNUP1ifFdKU7foyuUv` | `504073103` |
+| `8nnXShzSrrQmGS9BswFdenpgY1qqGABzPwhedwLKSn91` | `wW1yEvBrcofRHQRAGMQaipu3PHcwFxAoqoDW9eFyY5PKiwmR3R9RYStLN8Y7oaZbsahMYiit4R9QXnZt6hJtWPm` | `504073306` |
+
+Public RPC reported `finalized`, `err: null` for all five and the exact signatures appeared on the tape as 0.05 USDC buys. No blockhash error surfaced in the browser runs; service stderr contained zero `Blockhash not found` entries. The proxy does not publish per-attempt upstream diagnostics, so this does not claim zero internally recovered retries. Abel has not recorded a scenario pass because its block/screen state gate remains closed.
+
 ## Reversible halt window
 
 bw-participant acknowledged a pause in devnet runs. The window lasted approximately 15:16–15:17 UTC; the initial start notification had an incorrect clock time, which was corrected in the end notification. A synthetic `LUDP` reason was sent through the product's relay instruction path, not a direct account edit or claimed Nasdaq feed event. No volume cap was changed.
