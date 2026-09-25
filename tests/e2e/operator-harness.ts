@@ -4,6 +4,7 @@
  */
 import { spawn, execFile } from "node:child_process"
 import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { createServer } from "node:net"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { promisify } from "node:util"
@@ -14,7 +15,7 @@ import { startOwnFork } from "../../services/notice/fork/env"
 const run = promisify(execFile)
 export const PORT = 8990
 export const RPC = `http://127.0.0.1:${PORT}`
-export const WEB = "http://127.0.0.1:5194"
+export const WEB = "http://127.0.0.1:5294"
 export const API = `http://127.0.0.1:${PORT + 2}`
 export const ISSUER = `http://127.0.0.1:${PORT + 3}`
 const root = process.cwd()
@@ -37,61 +38,88 @@ let ownsLock = false
 
 export async function startOperatorStack(): Promise<OperatorStack> {
   await lockForkPort()
-  for (const file of [
-    `scripts/deploy/deployments/fork-${PORT}.json`, `scripts/deploy/deployments/fork-${PORT}.web.json`,
-    `services/.env.fork-${PORT}`, `services/indexer/.data/fork-${PORT}.sqlite`,
-    `services/indexer/.data/fork-${PORT}.sqlite-wal`, `services/indexer/.data/fork-${PORT}.sqlite-shm`,
-    "evidence/operator-workbench.webm",
-  ]) rmSync(file, { force: true })
-  for (const dir of [`services/credential/data/fork-${PORT}`, `services/relay/data/fork-${PORT}`]) rmSync(dir, { recursive: true, force: true })
-  process.env.SURFPOOL_DATASOURCE_RPC_URL = "https://api.mainnet.solana.com"
-  fork = await startOwnFork(PORT)
-  const env = { ...process.env, PATH: `${solanaBin}:${process.env.PATH}`, BELLWETHER_FORK_PORT: String(PORT), BELLWETHER_FORK_RPC_URL: RPC }
-  let goLiveError: unknown
-  for (let attempt = 0; attempt < 5; attempt++) {
-    try {
-      await run("npx", ["tsx", "scripts/deploy/go-live.ts", "--cluster", "fork", "--seed-usdc", "10"], { cwd: root, env, timeout: 480_000, maxBuffer: 2_000_000 })
-      goLiveError = undefined
-      break
-    } catch (error) {
-      goLiveError = error
-      await new Promise((resolve) => setTimeout(resolve, 2_000))
+  try {
+    await assertFreeWebPort()
+    for (const file of [
+      `scripts/deploy/deployments/fork-${PORT}.json`, `scripts/deploy/deployments/fork-${PORT}.web.json`,
+      `services/.env.fork-${PORT}`, `services/indexer/.data/fork-${PORT}.sqlite`,
+      `services/indexer/.data/fork-${PORT}.sqlite-wal`, `services/indexer/.data/fork-${PORT}.sqlite-shm`,
+      "evidence/operator-workbench.webm",
+    ]) rmSync(file, { force: true })
+    for (const dir of [`services/credential/data/fork-${PORT}`, `services/relay/data/fork-${PORT}`]) rmSync(dir, { recursive: true, force: true })
+    process.env.SURFPOOL_DATASOURCE_RPC_URL = datasourceRpcUrl()
+    fork = await startOwnFork(PORT)
+    const env = { ...process.env, PATH: `${solanaBin}:${process.env.PATH}`, BELLWETHER_FORK_PORT: String(PORT), BELLWETHER_FORK_RPC_URL: RPC }
+    let goLiveError: unknown
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        await run("npx", ["tsx", "scripts/deploy/go-live.ts", "--cluster", "fork", "--seed-usdc", "10"], { cwd: root, env, timeout: 480_000, maxBuffer: 2_000_000 })
+        goLiveError = undefined
+        break
+      } catch (error) {
+        goLiveError = error
+        await new Promise((resolve) => setTimeout(resolve, 2_000))
+      }
     }
-  }
-  if (goLiveError) {
+    if (goLiveError) {
+      throw goLiveError
+    }
+    const saved = JSON.parse(readFileSync(`scripts/deploy/deployments/fork-${PORT}.json`, "utf8")) as Record<string, string>
+    const deployment = Object.fromEntries(["programId", "venue", "stockMint", "usdcMint", "symbol", "pool"].map((key) => [key, address(saved[key])])) as OperatorStack["deployment"]
+    const serviceEnv = loadEnv(`services/.env.fork-${PORT}`)
+    serviceEnv.BELLWETHER_WS_URL = "off"
+    serviceEnv.BELLWETHER_TAPE_POLL_MS = "1000"
+    serviceEnv.BELLWETHER_TAPE_POOL_REFRESH_MS = "1000"
+    launch("npx", ["tsx", "services/indexer/main.ts"], serviceEnv)
+    launch("npx", ["tsx", "services/api/main.ts"], serviceEnv)
+    launch("npx", ["tsx", "services/credential/server.ts"], serviceEnv)
+    await Promise.all([ready(`${API}/symbols`, (body) => (body as { symbols?: unknown[] }).symbols?.length === 1), ready(`${ISSUER}/health`)])
+    const browserConfig = JSON.parse(readFileSync(`scripts/deploy/deployments/fork-${PORT}.web.json`, "utf8")) as Record<string, string>
+    launch("pnpm", ["-C", "web", "dev", "--host", "127.0.0.1", "--port", "5294", "--strictPort"], {
+      ...env, VITE_CLUSTER: "fork", VITE_RPC_URL: browserConfig.rpcUrl, VITE_WS_URL: browserConfig.wsUrl,
+      VITE_PROGRAM_ID: browserConfig.programId, VITE_VENUE: browserConfig.venue, VITE_BWRS_MINT: browserConfig.bwrsMint,
+      VITE_API_BASE_URL: browserConfig.apiBaseUrl, VITE_CREDENTIAL_API_URL: browserConfig.credentialApiUrl,
+    })
+    await ready(`${WEB}/config.json`)
+    const home = process.env.HOME ?? ""
+    return {
+      deployment,
+      operatorToken: serviceEnv.CREDENTIAL_OPERATOR_TOKEN ?? "",
+      admin: await loadKeypairSigner(`${home}/.config/solana/bellwether/fork/venue-admin.json`),
+      relay: await loadKeypairSigner(`${home}/.config/solana/bellwether/fork/relay.json`),
+      stop: stopStack,
+    }
+  } catch (error) {
     await stopStack()
-    throw goLiveError
+    throw error
   }
-  const saved = JSON.parse(readFileSync(`scripts/deploy/deployments/fork-${PORT}.json`, "utf8")) as Record<string, string>
-  const deployment = Object.fromEntries(["programId", "venue", "stockMint", "usdcMint", "symbol", "pool"].map((key) => [key, address(saved[key])])) as OperatorStack["deployment"]
-  const serviceEnv = loadEnv(`services/.env.fork-${PORT}`)
-  serviceEnv.BELLWETHER_WS_URL = "off"
-  serviceEnv.BELLWETHER_TAPE_POLL_MS = "1000"
-  serviceEnv.BELLWETHER_TAPE_POOL_REFRESH_MS = "1000"
-  launch("npx", ["tsx", "services/indexer/main.ts"], serviceEnv)
-  launch("npx", ["tsx", "services/api/main.ts"], serviceEnv)
-  launch("npx", ["tsx", "services/credential/server.ts"], serviceEnv)
-  await Promise.all([ready(`${API}/symbols`, (body) => (body as { symbols?: unknown[] }).symbols?.length === 1), ready(`${ISSUER}/health`)])
-  const browserConfig = JSON.parse(readFileSync(`scripts/deploy/deployments/fork-${PORT}.web.json`, "utf8")) as Record<string, string>
-  launch("pnpm", ["-C", "web", "dev", "--host", "127.0.0.1", "--port", "5194", "--strictPort"], {
-    ...env, VITE_CLUSTER: "fork", VITE_RPC_URL: browserConfig.rpcUrl, VITE_WS_URL: browserConfig.wsUrl,
-    VITE_PROGRAM_ID: browserConfig.programId, VITE_VENUE: browserConfig.venue, VITE_BWRS_MINT: browserConfig.bwrsMint,
-    VITE_API_BASE_URL: browserConfig.apiBaseUrl, VITE_CREDENTIAL_API_URL: browserConfig.credentialApiUrl,
-  })
-  await ready(`${WEB}/config.json`)
-  const home = process.env.HOME ?? ""
-  return {
-    deployment,
-    operatorToken: serviceEnv.CREDENTIAL_OPERATOR_TOKEN ?? "",
-    admin: await loadKeypairSigner(`${home}/.config/solana/bellwether/fork/venue-admin.json`),
-    relay: await loadKeypairSigner(`${home}/.config/solana/bellwether/fork/relay.json`),
-    stop: stopStack,
+}
+
+async function assertFreeWebPort(): Promise<void> {
+  const server = createServer()
+  try {
+    await new Promise<void>((resolve, reject) => {
+      server.once("error", reject)
+      server.listen(5294, "127.0.0.1", resolve)
+    })
+  } catch (error) {
+    throw new Error(`Operator web port 5294 is occupied: ${String(error)}`)
+  } finally {
+    if (server.listening) await new Promise<void>((resolve) => server.close(() => resolve()))
   }
 }
 
 async function stopStack() {
-  for (const child of processes.reverse()) { if (child.pid) { try { process.kill(child.pid, "SIGTERM") } catch { /* already exited */ } } }
-  try { await fork?.stop() } finally { if (ownsLock) rmSync(lockDir, { recursive: true, force: true }) }
+  for (const child of processes.reverse()) {
+    if (child.pid) {
+      try { process.kill(-child.pid, "SIGTERM") } catch { /* this run's process group already exited */ }
+    }
+  }
+  processes.length = 0
+  try { await fork?.stop() } finally {
+    fork = undefined
+    if (ownsLock) { rmSync(lockDir, { recursive: true, force: true }); ownsLock = false }
+  }
 }
 
 export function walletFromSigner(signer: KeyPairSigner, file: string) {
@@ -180,7 +208,7 @@ async function lockForkPort() {
 }
 
 function launch(command: string, args: string[], env: NodeJS.ProcessEnv) {
-  const child = spawn(command, args, { cwd: root, env, stdio: ["ignore", "pipe", "pipe"] })
+  const child = spawn(command, args, { cwd: root, env, detached: true, stdio: ["ignore", "pipe", "pipe"] })
   for (const stream of [child.stdout, child.stderr]) stream?.on("data", (data: Buffer) => {
     processLogs.push(data.toString().trim())
     if (processLogs.length > 40) processLogs.shift()
@@ -205,4 +233,13 @@ function loadEnv(file: string): NodeJS.ProcessEnv {
     if (split > 0) env[line.slice(0, split)] = line.slice(split + 1)
   }
   return env
+}
+
+function datasourceRpcUrl(): string {
+  if (process.env.SURFPOOL_DATASOURCE_RPC_URL) return process.env.SURFPOOL_DATASOURCE_RPC_URL
+  try {
+    const upstream = loadEnv("services/.env.devnet").RPC_UPSTREAM_URL_ALCHEMY
+    if (upstream?.includes("solana-devnet")) return upstream.replace("solana-devnet", "solana-mainnet")
+  } catch { /* local devnet env is optional */ }
+  return "https://api.mainnet.solana.com"
 }
