@@ -151,10 +151,12 @@ test("POST /rpc accepts the live browser origin and keeps responses out of share
     body: { jsonrpc: "2.0", id: 1, result: { value: 42 } } }) })
   const preflight = await app.request("/rpc", { method: "OPTIONS", headers: {
     origin: "https://bellwether.larinova.com", "access-control-request-method": "POST",
-    "access-control-request-headers": "content-type",
+    "access-control-request-headers": "content-type,solana-client",
   } })
   assert.equal(preflight.headers.get("access-control-allow-origin"), "https://bellwether.larinova.com")
   assert.match(preflight.headers.get("access-control-allow-methods") ?? "", /POST/)
+  assert.equal(preflight.headers.get("access-control-allow-headers"), "Content-Type,Solana-Client")
+  assert.equal(preflight.headers.get("access-control-max-age"), "600")
   const response = await app.request("/rpc", { method: "POST", headers: {
     origin: "https://bellwether.larinova.com", "content-type": "application/json",
   }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: ["account"] }) })

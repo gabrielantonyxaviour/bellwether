@@ -77,7 +77,7 @@ export function createApp(deps: ApiDeps): Hono {
 
   app.use("*", cors({
     origin: (origin) => origin === "https://bellwether.larinova.com" || /^http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?$/.test(origin) ? origin : "",
-    allowMethods: ["GET", "POST", "OPTIONS"], allowHeaders: ["Content-Type"], maxAge: 86_400,
+    allowMethods: ["GET", "POST", "OPTIONS"], allowHeaders: ["Content-Type", "Solana-Client"], maxAge: 600,
   }))
   app.use("*", async (c, next) => {
     await next()
