@@ -2,13 +2,14 @@
  * Typed, zod-validated fetchers for Bellwether's services, plus react-query keys and hooks.
  *
  *   Venue API (clusterConfig().apiBaseUrl):          GET /tape /symbols /venue /halts
- *   Credential issuer (clusterConfig().credentialApiUrl): POST /admit /revoke, GET /credential/:wallet /screening-log
- *   Placeholders (no service route yet):             GET /notice/draft, GET /rehearsal/fwdi
+ *   Credential issuer (clusterConfig().credentialApiUrl): GET /admit/challenge, POST /admit /revoke,
+ *     GET /credential/:wallet /screening-log
+ *   Venue API: GET /notice/draft /rehearsal/fwdi
  *
  * Every service error is { error, code? }; fetchers throw ApiError carrying both.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { z } from "zod"
+import { z } from "zod"
 import { clusterConfig } from "@/lib/cluster"
 import {
   AdmitResponseSchema,
@@ -89,6 +90,24 @@ export interface TapeQuery {
   side?: "buy" | "sell"
 }
 
+const AdmitChallengeSchema = z.looseObject({
+  wallet: z.string(),
+  message: z.string().min(1),
+  expiresAt: z.iso.datetime(),
+  expiresAtUnix: z.number().int(),
+})
+
+export type SignAdmissionMessage = (message: Uint8Array) => Promise<Uint8Array>
+
+function signatureBase64(signature: Uint8Array): string {
+  if (!(signature instanceof Uint8Array) || signature.length !== 64) {
+    throw new ApiError("Wallet returned an invalid admission signature", 0, "invalid_signature")
+  }
+  let binary = ""
+  for (const byte of signature) binary += String.fromCharCode(byte)
+  return btoa(binary)
+}
+
 export const api = {
   tape: (q: TapeQuery = {}, signal?: AbortSignal) => request(venueApi(), `/tape${qs({ ...q })}`, TapeResponseSchema, { signal }),
   symbols: (signal?: AbortSignal) => request(venueApi(), "/symbols", SymbolsResponseSchema, { signal }),
@@ -97,7 +116,16 @@ export const api = {
   /** Public tape JSON link for the "machine-readable" affordance. */
   tapeUrl: (q: TapeQuery = {}) => `${venueApi()}/tape${qs({ ...q })}`,
 
-  admit: (wallet: string) => request(credentialApi(), "/admit", AdmitResponseSchema, { method: "POST", body: { wallet } }),
+  admitChallenge: (wallet: string) =>
+    request(credentialApi(), `/admit/challenge?wallet=${encodeURIComponent(wallet)}`, AdmitChallengeSchema),
+  admit: async (wallet: string, signMessage: SignAdmissionMessage) => {
+    const challenge = await api.admitChallenge(wallet)
+    if (challenge.wallet !== wallet) throw new ApiError("Admission challenge belongs to a different wallet", 0, "bad_response")
+    const signature = signatureBase64(await signMessage(new TextEncoder().encode(challenge.message)))
+    return request(credentialApi(), "/admit", AdmitResponseSchema, {
+      method: "POST", body: { wallet, message: challenge.message, signature },
+    })
+  },
   revoke: (wallet: string, token: string) =>
     request(credentialApi(), "/revoke", RevokeResponseSchema, { method: "POST", body: { wallet }, token }),
   credential: (wallet: string, signal?: AbortSignal) =>
@@ -105,9 +133,7 @@ export const api = {
   screeningLog: (token: string, opts: { limit?: number; wallet?: string } = {}) =>
     request(credentialApi(), `/screening-log${qs({ limit: opts.limit?.toString(), wallet: opts.wallet })}`, ScreeningLogSchema, { token }),
 
-  /** Placeholder: services/notice has no HTTP route yet; the path is the agreed target. */
   noticeDraft: (signal?: AbortSignal) => request(venueApi(), "/notice/draft", NoticeDraftSchema, { signal }),
-  /** Placeholder: services/rehearsal writes latest-report.json; the path is the agreed target. */
   rehearsalReport: (signal?: AbortSignal) => request(venueApi(), "/rehearsal/fwdi", RehearsalReportSchema, { signal }),
 }
 
@@ -141,7 +167,7 @@ export const useRehearsalReport = () => useQuery({ queryKey: queryKeys.rehearsal
 export function useAdmit() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (wallet: string) => api.admit(wallet),
-    onSuccess: (_data, wallet) => qc.invalidateQueries({ queryKey: queryKeys.credential(wallet) }),
+    mutationFn: ({ wallet, signMessage }: { wallet: string; signMessage: SignAdmissionMessage }) => api.admit(wallet, signMessage),
+    onSuccess: (_data, { wallet }) => qc.invalidateQueries({ queryKey: queryKeys.credential(wallet) }),
   })
 }
