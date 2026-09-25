@@ -14,9 +14,9 @@ Draft checklist. A checked box needs a saved URL, command output, or on-screen c
 
 ## Publication gates
 
-- [ ] Complete the final secrets audit on the exact HEAD intended for GitHub, including all history and nonignored worktree paths. The prior [audit](../tasks/07-secrets-audit.md) and publication-prep rescan found no live secret; repeat the scan if commits or media change before pushing.
-- [ ] Add a root MIT `LICENSE` if that is the intended license; verify the public README reflects the actual terms.
-- [ ] Make <https://github.com/gabrielantonyxaviour/bellwether> public after the audit; open it without a signed-in session and check source, README and relevant proof links.
+- [x] Audit the exact filtered history and worktree pushed as `main` (`54d0c4a`): no Alchemy marker, private-key block, 64-byte key array or live credential found. The known literal match is a synthetic API test token. `docs/film/` and `evidence/` are absent from the public history. See the earlier [working-repo audit](../tasks/07-secrets-audit.md).
+- [x] Add a root [MIT LICENSE](https://github.com/gabrielantonyxaviour/bellwether/blob/main/LICENSE) to the filtered public repo; its root README renders with working relative links.
+- [x] Publish <https://github.com/gabrielantonyxaviour/bellwether> with default branch `main` at `54d0c4a`; check the public repo page and remote tree. Film media stays in the private working repo.
 - [x] Deploy Cloudflare Pages at <https://bellwether.larinova.com> and the named tunnel at <https://bellwether-api.larinova.com>; verify HTTPS, public devnet `config.json`, [API health](https://bellwether-api.larinova.com/health) and `/tape` read-back. The deployed web serves `/`, `/explorer`, `/about` and `/app/*` on devnet; the dated explorer shows the finalized fresh-wallet swap. See `checks/public-url.ts` and commit `007800a`.
 - [x] Verify the deployed browser wallet's admission, swap, tape, LP deposit and withdrawal against public devnet services; operator screen block passed its isolated fork harness. The six formal Circuit journeys remain pending.
 - [ ] Upload the ≤3:00 video with Gabriel's voice. Open the public video URL anonymously; check audio, labels and end card.
@@ -30,7 +30,7 @@ Draft checklist. A checked box needs a saved URL, command output, or on-screen c
 
 - [ ] Confirm Step 1 character limits and paste the counted fields from [`portal-answers.md`](portal-answers.md); recount in the portal.
 - [ ] Select **Stocklana main track only**; no sponsor tracks. Confirm the portal's actual track controls.
-- [ ] Add only resolved GitHub, live app and video links; confirm the portal requires at least one and verify every one as a judge would see it.
+- [ ] Add the resolved [GitHub repo](https://github.com/gabrielantonyxaviour/bellwether) and live app; add the video link after upload. Confirm the portal's actual link fields and preview.
 - [ ] Confirm team name and invite choices with Gabriel; do not infer teammates from source files.
 - [ ] Check actual Steps 2–5 for extra required fields, rights/eligibility attestations and final preview. Correct the draft rather than guessing.
 - [ ] Check deadline and editing rules on the live portal; save a local copy of the final entered answers.
