@@ -36,7 +36,10 @@
     "seedLiquidity": "2jP2Q6o3fErYKezXBaztfc3DcptaebKhRdsPMVGbKkeq8XdUXSdHjxd7iG289q6tGkCJxT3FWwbiPsEJD6maJkaG",
     "smokeFundSol": "3tFRoacYw8kaGTfrtNCuvSr727ezUGEkFsAC9TTkKwu7VksAYNHbtFRPoevMyVurpJ4gktUXcK7Y2ptCewAfFaFC",
     "smokeFundUsdc": "45rVMuNGgF5ZEHmMA7L3BwMuAcUVrocLoCEGbs6FmrJNDZrw2V7TyV2TKrWcHritTkCee24YS1uCWmUmAHTNoazs",
-    "smokeSwap": "3opPyjqKMpd5ubVimz33BX2xH87gWUcXdW6X6wpsSb3NCopRiu7oU5UNkkocoZVmnmqyupPSwpVZ3yTtvYUtCC7P"
+    "smokeSwap": "3opPyjqKMpd5ubVimz33BX2xH87gWUcXdW6X6wpsSb3NCopRiu7oU5UNkkocoZVmnmqyupPSwpVZ3yTtvYUtCC7P",
+    "publicFreshAdmission": "4fhDNor3QdKR9pJKq5r4C6T6YtfXZfWnSZCsMMBPgved3mpMZMxUi6goYNv2ukujx97gL73mgD3uBqhq7DUF1zYx",
+    "publicFreshFunding": "5wDxznw8YnD8PY3mVQoicdJiQK3xJQLQSKKLfeSSK76CDHUztvY93djbqHK9Hznxi1PCFCSpn8rLAz9qNwmuoUBB",
+    "publicFreshSwap": "4fuqTEufSL9pWn5ohaShKyVCvMTt5eieDdXNwo3yjnd3tv1WtxeN8aJfP6Hw9vkzDXx6Ub6C1EKdEmyiJb6eiUBW"
   },
   "completed": [
     "program",
@@ -63,5 +66,5 @@
     "smokeSwap"
   ],
   "durationsMs": {},
-  "updatedAt": "2026-09-25T13:42:22.405Z"
+  "updatedAt": "2026-09-25T14:23:35.745Z"
 }

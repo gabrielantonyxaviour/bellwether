@@ -2,7 +2,7 @@
 
 Bellwether is a Solana venue-program prototype and operator workbench for the SEC's [Tokenized Securities Venue Innovation Exemption (Release 34-106402)](https://www.sec.gov/files/rules/exorders/2026/34-106402.pdf). It demonstrates permissioned rehearsal-stock swaps, exchange-halt and stale-feed stops, share budgets, listing clocks, and a public trade tape.
 
-**Status:** A BWRS/test-USDC swap and tape read-back were proven end to end on devnet. A local Surfpool mainnet fork exercised the program against the real FWDI mint. Mainnet trading and public web hosting require separate verification. Bellwether is not an operating securities venue.
+**Status:** A fresh wallet signed admission, received devnet fee SOL and test USDC, swapped BWRS, and saw its finalized print on the [public tape](https://bellwether-api.larinova.com/tape). The web is hosted at <https://bellwether.larinova.com>. A local Surfpool mainnet fork exercised the program against the real FWDI mint. Mainnet trading is unverified. Bellwether is not an operating securities venue.
 
 ## Quick start
 
@@ -15,7 +15,7 @@ npm run typecheck
 npx tsx checks/fork-scenario.ts
 ```
 
-The fork scenario binds Surfpool to localhost, forks mainnet state, tests FWDI and time-dependent rules, and writes local proof to `scripts/fork/out/fork-scenario.json`. It needs a working mainnet RPC and may require locally configured Solana tooling. See [deployment and local services](scripts/deploy/README.md) for the full fork, devnet and service commands. Do not run the mainnet execution command as part of this quick start.
+The fork scenario binds Surfpool to localhost, forks mainnet state, tests FWDI and time-dependent rules, and writes local proof to `scripts/fork/out/fork-scenario.json`. It needs a working mainnet RPC and may require locally configured Solana tooling. See [deployment and local services](../../scripts/deploy/README.md) for the full fork, devnet and service commands. Do not run the mainnet execution command as part of this quick start.
 
 ## How it works
 
@@ -41,7 +41,7 @@ The program's swap path checks credential → halt and heartbeat freshness → a
 
 | Environment | Asset and proof | Limit |
 | --- | --- | --- |
-| Devnet | BWRS rehearsal token and **test USDC**. Program `88chqe41hw9uhqrUK6KfytQ7aZgEGJzcqszXGKJFWfuB`; [finalized example swap](https://solscan.io/tx/3opPyjqKMpd5ubVimz33BX2xH87gWUcXdW6X6wpsSb3NCopRiu7oU5UNkkocoZVmnmqyupPSwpVZ3yTtvYUtCC7P?cluster=devnet) appeared on `/tape`. Full signatures: [`devnet.json`](scripts/deploy/deployments/devnet.json). | Test assets and test admission. |
+| Devnet | BWRS rehearsal token and **test USDC**. Program `88chqe41hw9uhqrUK6KfytQ7aZgEGJzcqszXGKJFWfuB`; [finalized fresh-wallet swap](https://solscan.io/tx/4fuqTEufSL9pWn5ohaShKyVCvMTt5eieDdXNwo3yjnd3tv1WtxeN8aJfP6Hw9vkzDXx6Ub6C1EKdEmyiJb6eiUBW?cluster=devnet) appeared on the [public tape](https://bellwether-api.larinova.com/tape). Full signatures: [`devnet.json`](../../scripts/deploy/deployments/devnet.json). | Test assets and test admission. |
 | Local mainnet fork | Real FWDI mint; local fork scenario checked an FWDI swap, issuer-notice window and second-breach pause. | Fork-only cheatcodes thawed and funded FWDI accounts; local signatures are not public mainnet proof. |
 | Mainnet | **[PROGRAM ID AND VERIFIED TRANSACTIONS AFTER DEPLOYMENT]** | No mainnet execution is claimed here. |
 
@@ -49,14 +49,14 @@ FWDI is used for read-only issuer and authority rehearsal. The fork's account th
 
 ## Run the local app against devnet
 
-First complete the devnet setup in the [deployment guide](scripts/deploy/README.md), including its generated public `devnet.web.json` and local service environment. Then start the services and web app:
+First complete the devnet setup in the [deployment guide](../../scripts/deploy/README.md), including its generated public `devnet.web.json` and local service environment. Then start the services and web app:
 
 ```bash
 npx tsx scripts/deploy/start-services.ts --cluster devnet
 pnpm -C web dev
 ```
 
-Copy `scripts/deploy/deployments/devnet.web.json` to `web/public/config.json` before opening the app locally. That file contains public addresses and local API URLs; it does not start the services. See [web configuration](web/README.md) for cluster overrides and wallet behavior. The web UI is under active build; verify each route before recording or linking it publicly.
+Copy `scripts/deploy/deployments/devnet.web.json` to `web/public/config.json` before opening the app locally. That file contains public addresses and local API URLs; it does not start the services. See [web configuration](../../web/README.md) for cluster overrides and wallet behavior. The hosted build uses the public API domain and devnet RPC; complete the browser journey before recording it as product proof.
 
 ## Source layout
 

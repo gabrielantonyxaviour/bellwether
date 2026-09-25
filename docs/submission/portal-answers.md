@@ -47,12 +47,12 @@ Only Step 1's fields have been observed. Map these values to the actual fields b
 | Likely field | Draft answer / required check |
 | --- | --- |
 | Track | Stocklana **main track only**. No sponsor tracks. Confirm portal selector. |
-| Tech stack | Rust + Pinocchio venue program; Token-2022 and Solana Attestation Service; TypeScript relay, caps job, credential issuer, indexer and API; React + Vite web app; Surfpool mainnet fork. Cloudflare Pages/Workers is the approved hosting target, not a verified deployment. |
+| Tech stack | Rust + Pinocchio venue program; Token-2022 and Solana Attestation Service; TypeScript relay, caps job, credential issuer, indexer and API; React + Vite web app; Surfpool mainnet fork. The web is deployed on Cloudflare Pages; signing services run on a Mac through a named Cloudflare tunnel. |
 | GitHub | <https://github.com/gabrielantonyxaviour/bellwether> — approved target; verify public access and secrets audit before adding. |
-| Live app | <https://bellwether.larinova.com> — approved target; verify working public routes and chain/API connection before adding. |
+| Live app | <https://bellwether.larinova.com> — HTTPS and devnet config verified. API and public tape: <https://bellwether-api.larinova.com/tape>. Complete the browser wallet journey before portal submission. |
 | Demo video | **[ADD PUBLIC VIDEO URL AFTER UPLOAD]**; ≤3:00, Gabriel's voice. |
 | Team | Gabriel Antony Xaviour; confirm account name and any invited teammates in the portal. |
 | Sponsor tracks | None. |
-| Program and proof | Devnet program `88chqe41hw9uhqrUK6KfytQ7aZgEGJzcqszXGKJFWfuB`; devnet swap `3opPyjqKMpd5ubVimz33BX2xH87gWUcXdW6X6wpsSb3NCopRiu7oU5UNkkocoZVmnmqyupPSwpVZ3yTtvYUtCC7P`. Add links only where the portal asks, after verifying they resolve. |
+| Program and proof | Devnet program `88chqe41hw9uhqrUK6KfytQ7aZgEGJzcqszXGKJFWfuB`; fresh-wallet signed admission, funding and finalized swap `4fuqTEufSL9pWn5ohaShKyVCvMTt5eieDdXNwo3yjnd3tv1WtxeN8aJfP6Hw9vkzDXx6Ub6C1EKdEmyiJb6eiUBW` on the [public tape](https://bellwether-api.larinova.com/tape). Full signatures in [`devnet.json`](../../scripts/deploy/deployments/devnet.json). |
 
 The [official Stocklana page](https://hackathons.solana.com/hackathons/stocklana) says at least one GitHub, live-demo or video link is required and edits are allowed until close. Check the live portal before relying on its deadline or field layout.

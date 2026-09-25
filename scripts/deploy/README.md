@@ -31,6 +31,64 @@ To point a local web build at this venue, copy `deployments/devnet.web.json` to
 `web/public/config.json`, then serve the web app. The JSON contains only public addresses and
 local API URLs. It does not publish the app or the services.
 
+## Public devnet for judging
+
+- Web: <https://bellwether.larinova.com> (Cloudflare Pages project `bellwether`).
+- API and admission: <https://bellwether-api.larinova.com>. `/health` and `/admit/*` reach the
+  credential service; `/tape`, `/venue`, `/halts` and other public reads reach the venue API.
+- Devnet RPC: <https://api.devnet.solana.com>. The browser's public configuration is
+  [`web/public/config.json`](../../web/public/config.json). No private key or operator token is
+  included in the Pages build.
+
+The requested `api.bellwether.larinova.com` hostname needs a certificate for a two-level
+subdomain. Cloudflare's existing certificate covers `*.larinova.com`, and its certificate API
+returned code 1450 when asked to issue an advanced certificate. The covered
+`bellwether-api.larinova.com` hostname is the verified HTTPS endpoint.
+
+On the hosting Mac, from the repository root, install the two user LaunchAgents:
+
+```bash
+node node_modules/tsx/dist/cli.mjs scripts/deploy/install-launchagents.ts
+launchctl print gui/$(id -u)/com.bellwether.devnet
+launchctl print gui/$(id -u)/com.bellwether.tunnel
+cat ~/Library/Logs/bellwether/devnet-pids.json
+```
+
+`com.bellwether.devnet` starts relay, indexer, venue API and credential issuer with the real
+`node_modules/tsx/dist/cli.mjs` Node entry, and runs caps daily at 07:30 UTC. The supervisor
+records its own PID and child PIDs in `devnet-pids.json`; launchd keeps it alive. It also holds
+an AC-power sleep assertion for its own lifetime. Keep the Mac plugged in, awake and online with
+its lid open. `com.bellwether.tunnel` keeps the named `bellwether-devnet` Cloudflare tunnel
+connected. Their stdout and stderr are in `~/Library/Logs/bellwether/`; the tunnel credentials
+and private service env stay outside the web build. Stop or restart a job by its exact launchd
+label with `launchctl bootout` / `bootstrap` or `kickstart`, never by a process-name pattern.
+
+To redeploy the current web after screen commits, run:
+
+```bash
+bash scripts/deploy/web.sh
+```
+
+The script writes public devnet `config.json`, the SPA fallback `_redirects`, builds `web/`, and
+deploys its output to the `bellwether` Pages production branch. The deployment does not change
+the local signing services.
+
+Devnet signed admission issues an SAS credential, thaws the test stock account, and funds a new
+wallet up to 0.01 devnet SOL and 1 test USDC. The service caps funding at 20 wallets per UTC day
+and records funded wallets durably; repeat admission does not refill a wallet. This test funding
+is available only on devnet. To repeat the public proof using the saved private smoke wallet:
+
+```bash
+node node_modules/tsx/dist/cli.mjs scripts/deploy/public-smoke.ts
+curl -fsS https://bellwether-api.larinova.com/tape
+```
+
+The public smoke uses a signed admission challenge, confirms funding balances, signs a real
+devnet swap and waits for its print on the public tape. Its admission, funding and swap
+signatures are in [`devnet.json`](deployments/devnet.json); the fresh-wallet swap is
+`4fuqTEufSL9pWn5ohaShKyVCvMTt5eieDdXNwo3yjnd3tv1WtxeN8aJfP6Hw9vkzDXx6Ub6C1EKdEmyiJb6eiUBW`
+and finalized on devnet. The smoke wallet key remains under `~/.config/solana/bellwether/devnet/`.
+
 ## Local mainnet fork
 
 ```bash

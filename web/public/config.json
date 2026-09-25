@@ -1,1 +1,12 @@
-{}
+{
+  "cluster": "devnet",
+  "rpcUrl": "https://api.devnet.solana.com",
+  "wsUrl": "wss://api.devnet.solana.com",
+  "programId": "88chqe41hw9uhqrUK6KfytQ7aZgEGJzcqszXGKJFWfuB",
+  "venue": "7ZJgd9Wo4Vum2vvRnwgZeCiZLrUWar3i3ysykk9QbToa",
+  "usdcMint": "9ZS71W4189AXsKg4doiH39gvhrsC6EFdYJoWrDD3effM",
+  "bwrsMint": "HaNnXVZYwBW9LkPJEHjyLXVyfWv4tijiwogYvrdhJ3tD",
+  "defaultSymbol": "BWRS",
+  "apiBaseUrl": "https://bellwether-api.larinova.com",
+  "credentialApiUrl": "https://bellwether-api.larinova.com"
+}
