@@ -43,15 +43,15 @@ function Report({ report }: { report: OperatorRehearsal }) {
         <h2 className="font-semibold">Markets</h2>
         {report.markets.found.length === 0 && <EmptyBlock title="No markets found" detail="The rehearsal scan did not attribute an FWDI market." />}
         <div className="mt-3 min-w-0 overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left">
-            <thead><tr className="border-b text-xs text-muted-foreground"><th className="py-2">Program</th><th>Kind</th><th>Vault</th><th>Can trade</th></tr></thead>
+          <table className="w-full min-w-[780px] text-left">
+            <thead><tr className="border-b text-xs text-muted-foreground"><th className="px-3 py-2">Program</th><th className="px-3 py-2">Kind</th><th className="px-3 py-2">Vault</th><th className="min-w-[360px] px-3 py-2">Can trade</th></tr></thead>
             <tbody>
               {report.markets.found.map((market) => (
                 <tr key={market.address} className="border-b last:border-0">
-                  <td className="py-2">{market.programName}</td>
-                  <td>{market.kind}</td>
-                  <td>{market.fwdiVault.state ?? (market.fwdiVault.exists ? "present" : "missing")}</td>
-                  <td>{market.canTrade ? "Yes" : market.blocker ?? "Blocked"}</td>
+                  <td className="px-3 py-2">{market.programName}</td>
+                  <td className="px-3 py-2">{market.kind}</td>
+                  <td className="px-3 py-2">{market.fwdiVault.state ?? (market.fwdiVault.exists ? "present" : "missing")}</td>
+                  <td className="px-3 py-2">{market.canTrade ? "Yes" : market.blocker ?? "Blocked"}</td>
                 </tr>
               ))}
             </tbody>
