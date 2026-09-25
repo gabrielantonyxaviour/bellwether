@@ -20,6 +20,7 @@ interface TokenInputProps {
   ariaLabel?: string;
   presets?: { label: string; fraction: number }[];
   onPreset?: (fraction: number) => void;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -35,6 +36,7 @@ const TokenInput = ({
   ariaLabel,
   presets = [{ label: "Half", fraction: 0.5 }, { label: "Max", fraction: 1 }],
   onPreset,
+  disabled = false,
   className,
 }: TokenInputProps) => {
   const [internalValue, setInternalValue] = React.useState(value ?? "");
@@ -71,7 +73,7 @@ const TokenInput = ({
           </span>
           {balance !== undefined && <div className="flex items-center gap-2">
             {presets.map(({ label, fraction }) => <Button key={label} type="button" variant="outline" size="sm"
-              className="h-6 rounded-sm px-2 text-xs" onClick={() => handleQuickAmount(fraction)}>{label}</Button>)}
+              disabled={disabled} className="h-6 rounded-sm px-2 text-xs" onClick={() => handleQuickAmount(fraction)}>{label}</Button>)}
           </div>}
         </div>
       )}
@@ -84,6 +86,7 @@ const TokenInput = ({
         <div className="flex flex-col flex-1 min-w-0 items-end">
           <NumericFormat
             aria-label={ariaLabel}
+            disabled={disabled}
             value={currentValue}
             onValueChange={handleValueChange}
             thousandSeparator=","

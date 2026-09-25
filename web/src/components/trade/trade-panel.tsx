@@ -76,8 +76,9 @@ export function TradePanel({ market }: { market: ParticipantMarket }) {
     <div className="mt-4 grid grid-cols-2 gap-2" role="tablist" aria-label="Trade direction">{(["buy", "sell"] as const).map((direction) => <Button key={direction} role="tab" aria-selected={side === direction} variant={side === direction ? "default" : "outline"} onClick={() => { setSide(direction); setAmount(""); tx.reset() }}>{direction === "buy" ? "Buy" : "Sell"}</Button>)}</div>
     <div className="mt-4"><label className="mb-2 block text-xs text-muted-foreground">You pay · {inSymbol}</label><TokenInput key={inSymbol} tokens={[{ symbol: inSymbol, icon: tokenIcon(inSymbol) }]} defaultToken={inSymbol}
       ariaLabel={`You pay · ${inSymbol}`} balance={balance == null || decimalsIn == null ? undefined : formatUnits(balance, decimalsIn)} value={amount}
+      disabled={tx.busy}
       balanceMessage={!market.wallet.publicKey ? "Connect wallet to view" : undefined}
-      onValueChange={(value) => { setAmount(value); tx.reset() }} presets={presets} onPreset={preset} /></div>
+      onValueChange={(value) => { if (tx.busy || value === amount) return; setAmount(value); tx.reset() }} presets={presets} onPreset={preset} /></div>
     <div className="mt-3 rounded-lg border p-3"><div className="text-xs text-muted-foreground">You receive · {outSymbol}</div><div className="mt-1 flex justify-between gap-2 text-xl"><strong className="tabular-nums">{quote && decimalsOut != null ? formatUnits(quote.out, decimalsOut) : "0.00"}</strong><strong className="text-sm">{outSymbol}</strong></div></div>
     {quote && pool && decimalsIn != null && decimalsOut != null && <dl className="mt-3 text-xs">
       <Row label="Execution price" value={executionPrice ? `$${formatUsd(String(executionPrice), 4)} / ${stockSymbol}` : "Unavailable"} />
