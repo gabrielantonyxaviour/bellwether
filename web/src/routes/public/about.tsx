@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { ChainLink } from "@/components/public/chain-link"
+import { ChainLink, LocalRecording } from "@/components/public/chain-link"
 import { formatShares } from "@/components/public/format"
 import { useNoticeChain, type NoticeChain } from "@/components/public/notice"
 import { devnetRecord, forkRecord, mainnetRecord, orderedSignatures, solscanUrl, type DevnetRecord, type ForkRecord } from "@/components/public/records"
@@ -10,25 +10,33 @@ import { formatUnits } from "@/lib/format"
 
 const ORDER = "https://www.sec.gov/files/rules/exorders/2026/34-106402.pdf"
 
-function AccountRow({ label, cluster, id, rpcUrl }: { label: string; cluster: "devnet" | "fork" | "mainnet"; id: string; rpcUrl?: string }) {
+function AccountRow({ label, id }: { label: string; id: string }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-2">
       <span className="text-muted-foreground">{label}</span>
-      <ChainLink href={solscanUrl(cluster, "account", id, rpcUrl)} id={id} kind="account" />
+      <ChainLink href={solscanUrl("devnet", "account", id)} id={id} kind="account" />
     </div>
   )
 }
 
-function SignatureList({ cluster, map, rpcUrl }: { cluster: "devnet" | "fork"; map: Record<string, string>; rpcUrl?: string }) {
-  const rows = orderedSignatures(map)
+function SignatureList({ map }: { map: Record<string, string> }) {
   return (
     <div className="grid gap-1">
-      {rows.map(([key, signature]) => (
+      {orderedSignatures(map).map(([key, signature]) => (
         <div key={key} className="flex flex-wrap items-baseline justify-between gap-2">
           <span className="text-muted-foreground">{key}</span>
-          <ChainLink href={solscanUrl(cluster, "tx", signature, rpcUrl)} id={signature} kind="tx" />
+          <ChainLink href={solscanUrl("devnet", "tx", signature)} id={signature} kind="tx" />
         </div>
       ))}
+    </div>
+  )
+}
+
+function LocalRow({ label, id }: { label: string; id: string }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-2">
+      <span className="text-muted-foreground">{label}</span>
+      <LocalRecording id={id} name={label} />
     </div>
   )
 }
@@ -47,11 +55,11 @@ function DevnetCard({ record }: { record: DevnetRecord }) {
   return (
     <Panel title="Devnet · end to end" action={<span className="text-xs text-muted-foreground">Recorded {record.updatedAt.slice(0, 10)}</span>}>
       <div className="grid gap-4 p-3 text-sm">
-        <AccountRow label="Program" cluster="devnet" id={record.programId} />
-        <div className="grid gap-1">{accounts.map(([label, id]) => <AccountRow key={label} label={label} cluster="devnet" id={id} />)}</div>
+        <AccountRow label="Program" id={record.programId} />
+        <div className="grid gap-1">{accounts.map(([label, id]) => <AccountRow key={label} label={label} id={id} />)}</div>
         <div>
           <h3 className="mb-1 text-xs font-medium text-muted-foreground">Signatures</h3>
-          <SignatureList cluster="devnet" map={record.signatures} />
+          <SignatureList map={record.signatures} />
         </div>
       </div>
     </Panel>
@@ -60,18 +68,24 @@ function DevnetCard({ record }: { record: DevnetRecord }) {
 
 function ForkCard({ record }: { record: ForkRecord }) {
   return (
-    <Panel title="Fork · recorded" action={<span className="text-xs text-muted-foreground">Checked {record.checkedAt.slice(0, 16)}Z</span>}>
+    <Panel title="Fork · local recording" action={<span className="text-xs text-muted-foreground">Checked {record.checkedAt.slice(0, 16)}Z</span>}>
       <div className="grid gap-4 p-3 text-sm">
-        <p className="text-xs break-all text-muted-foreground">
-          Links use Solscan&apos;s custom RPC ({record.rpcUrl}). They resolve only on the machine that is running that fork.
+        <p className="text-xs text-muted-foreground">
+          Local recording. These accounts and signatures lived on a Surfpool fork and are not on public Solscan.
+          Copy them here. The committed record is <code className="break-all">scripts/fork/out/fork-scenario.json</code>.
           Transfer-agent approval in this recording: {record.transferAgentApproval}.
         </p>
-        <AccountRow label="Program" cluster="fork" id={record.programId} rpcUrl={record.rpcUrl} />
-        <AccountRow label="Venue" cluster="fork" id={record.venue} rpcUrl={record.rpcUrl} />
-        <AccountRow label="FWDI mint" cluster="fork" id={record.fwdiMint} rpcUrl={record.rpcUrl} />
+        <LocalRow label="Program" id={record.programId} />
+        <LocalRow label="Venue" id={record.venue} />
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <span className="text-muted-foreground">FWDI mint · public</span>
+          <ChainLink href={solscanUrl("mainnet", "token", record.fwdiMint)} id={record.fwdiMint} kind="token" />
+        </div>
         <div>
-          <h3 className="mb-1 text-xs font-medium text-muted-foreground">Signatures</h3>
-          <SignatureList cluster="fork" map={record.signatures} rpcUrl={record.rpcUrl} />
+          <h3 className="mb-1 text-xs font-medium text-muted-foreground">Signatures · local recording</h3>
+          <div className="grid gap-1">
+            {orderedSignatures(record.signatures).map(([key, signature]) => <LocalRow key={key} label={key} id={signature} />)}
+          </div>
         </div>
       </div>
     </Panel>

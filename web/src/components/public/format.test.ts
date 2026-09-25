@@ -28,9 +28,10 @@ describe("public links", () => {
     expect(url.pathname).toContain("/account/")
   })
 
-  it("points a fork signature at that fork's RPC", () => {
-    const url = new URL(solscanUrl("fork", "tx", "sig", "http://127.0.0.1:8960"))
-    expect(url.searchParams.get("cluster")).toBe("custom")
-    expect(url.searchParams.get("customUrl")).toBe("http://127.0.0.1:8960")
+  it("keeps a mainnet account on public Solscan", () => {
+    const url = new URL(solscanUrl("mainnet", "token", "7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9"))
+    expect(url.searchParams.get("cluster")).toBeNull()
+    expect(url.searchParams.has("customUrl")).toBe(false)
+    expect(url.hostname).toBe("solscan.io")
   })
 })

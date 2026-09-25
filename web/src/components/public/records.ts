@@ -45,13 +45,10 @@ export const forkRecord = ForkSchema.parse(forkFile)
 /** No mainnet deployment file exists. The pitch target stays an empty state. */
 export const mainnetRecord = null
 
-export function solscanUrl(cluster: "devnet" | "mainnet" | "fork", kind: ExplorerKind, id: string, rpcUrl?: string): string {
+/** Public Solscan only. Fork recordings are not linked: their RPC is local to the machine that ran the fork. */
+export function solscanUrl(cluster: "devnet" | "mainnet", kind: ExplorerKind, id: string): string {
   const url = new URL(`https://solscan.io/${kind}/${id}`)
   if (cluster === "devnet") url.searchParams.set("cluster", "devnet")
-  if (cluster === "fork") {
-    url.searchParams.set("cluster", "custom")
-    url.searchParams.set("customUrl", rpcUrl ?? "http://127.0.0.1:8899")
-  }
   return url.toString()
 }
 
