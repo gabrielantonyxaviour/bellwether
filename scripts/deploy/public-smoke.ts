@@ -10,6 +10,7 @@ import { createDeploymentChain } from "./chain.js"
 import { key, loadDeployment, saveDeployment } from "./state.js"
 
 const origin = "https://bellwether-api.larinova.com"
+const proofDate = "2026-09-25"
 const challengeSchema = z.object({ wallet: z.string(), message: z.string().min(1), expiresAt: z.string() })
 const admitSchema = z.object({ status: z.literal("admitted"), signature: z.string().nullable(),
   funding: z.object({ status: z.enum(["funded", "already_funded"]), signature: z.string().nullable(),
@@ -26,7 +27,7 @@ async function responseJson(url: string, init?: RequestInit): Promise<unknown> {
 async function waitForPrint(signature: string): Promise<void> {
   const deadline = Date.now() + 90_000
   while (Date.now() < deadline) {
-    const tape = await responseJson(`${origin}/tape?limit=50`)
+    const tape = await responseJson(`${origin}/tape?date=${proofDate}`)
     if (JSON.stringify(tape).includes(signature)) return
     await new Promise((resolve) => setTimeout(resolve, 1_000))
   }
@@ -84,7 +85,7 @@ async function main() {
     saveDeployment(deployment)
   }
   await waitForPrint(deployment.signatures.publicFreshSwap)
-  process.stdout.write(`public smoke passed: wallet ${trader.address}; swap ${deployment.signatures.publicFreshSwap}; funding ${deployment.signatures.publicFreshFunding}; ${origin}/tape\n`)
+  process.stdout.write(`public smoke passed: wallet ${trader.address}; swap ${deployment.signatures.publicFreshSwap}; funding ${deployment.signatures.publicFreshFunding}; https://bellwether.larinova.com/explorer?date=${proofDate}\n`)
 }
 
 main().catch((error) => { process.stderr.write(`public smoke failed: ${errorText(error)}\n`); process.exitCode = 1 })

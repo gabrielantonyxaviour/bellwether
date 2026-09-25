@@ -27,7 +27,7 @@ async function main() {
     indexer: z.object({ stale: z.literal(false) }).passthrough() }).passthrough().parse(await json(`${api}/venue`))
   assert.equal(venue.program, deployment.programId)
   const tape = z.object({ prints: z.array(z.object({ signature: z.string() }).passthrough()) })
-    .passthrough().parse(await json(`${api}/tape`))
+    .passthrough().parse(await json(`${api}/tape?date=2026-09-25`))
   assert(tape.prints.some((print) => print.signature === deployment.signatures.publicFreshSwap),
     "fresh-wallet signature missing from public API tape")
 
