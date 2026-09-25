@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { z } from "zod"
+import { credentialLookupPhase } from "@/components/operator/credential-lookup"
 import { AddressLink, EmptyBlock, ErrorBlock, LoadingBlock, OperatorPage, ReviewPanel } from "@/components/operator/states"
 import { useOperatorAdmit, useOperatorRevoke, useOperatorToken, useScreeningLog } from "@/components/operator/use-operator"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,11 @@ export function OperatorParticipantsPage() {
   const revoke = useOperatorRevoke()
   const [action, setAction] = useState<{ kind: "issue" | "revoke"; wallet: string } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+  const lookupPhase = credentialLookupPhase(lookupWallet, {
+    isLoading: credential.isLoading,
+    isError: credential.isError,
+    hasData: credential.data != null,
+  })
 
   const run = async () => {
     if (!action || !token) return
@@ -73,10 +79,10 @@ export function OperatorParticipantsPage() {
           <Button type="button" disabled={!token} onClick={() => start(lookup, "issue", setFormError, setAction)}>Review issue</Button>
           <Button type="button" variant="outline" disabled={!token} onClick={() => start(lookup, "revoke", setFormError, setAction)}>Review revoke</Button>
         </div>
-        {!lookupWallet && <EmptyBlock title="No wallet selected" detail="Enter a wallet address and choose Look up to read its public credential." />}
-        {lookupWallet && credential.isPending && <p role="status" className="text-sm">Reading credential…</p>}
-        {lookupWallet && credential.isError && <ErrorBlock message={credential.error.message} onRetry={() => void credential.refetch()} />}
-        {credential.data && (
+        {lookupPhase === "empty" && <EmptyBlock title="No wallet selected" detail="Enter a wallet address and choose Look up to read its public credential." />}
+        {lookupPhase === "loading" && <p role="status" className="text-sm">Reading credential…</p>}
+        {lookupPhase === "error" && <ErrorBlock message={credential.error.message} onRetry={() => void credential.refetch()} />}
+        {lookupPhase === "result" && credential.data && (
           <dl className="text-sm">
             <div className="flex justify-between gap-3 border-b py-2"><dt>Status</dt><dd>{credential.data.status}</dd></div>
             <div className="flex justify-between gap-3 border-b py-2"><dt>Expires</dt><dd>{credential.data.expiresAt ? new Date(credential.data.expiresAt).toLocaleString() : "—"}</dd></div>
