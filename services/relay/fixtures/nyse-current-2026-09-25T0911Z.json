@@ -1,0 +1,160 @@
+{
+ "totalCount": 15,
+ "results": {
+  "lastUpdatedTime": "2026-09-25 05:11:26",
+  "formatedLastUpdatedTime": "2026-09-25 05:11:26",
+  "tradeHalts": [
+   {
+    "formatedHaltDate": "2026-09-24",
+    "formatedHaltTime": "19:50:00",
+    "symbol": "RPGL",
+    "issuerName": "Republic Power Group Limited Class A Ordinary Shares",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2026-09-24",
+    "formatedHaltTime": "19:50:00",
+    "symbol": "KITTW",
+    "issuerName": "Nauticus Robotics, Inc Warrant",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2026-09-24",
+    "formatedHaltTime": "19:50:00",
+    "symbol": "KITT",
+    "issuerName": "Nauticus Robotics, Inc. Common stock",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2026-09-22",
+    "formatedHaltTime": "16:15:52",
+    "symbol": "BKKT WS",
+    "issuerName": "Bakkt, Inc. Warrants to purchase Class A Common Stock Each Warrant entitles to purchase 1/25th of a share of Class A common stock at an exercise price",
+    "sourceExchange": "NYSE",
+    "reason": "Regulatory Concern",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2026-06-11",
+    "formatedHaltTime": "19:50:00",
+    "symbol": "HCHL",
+    "issuerName": "Happy City Holdings Limited Class A Ordinary shares",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2025-12-04",
+    "formatedHaltTime": "19:50:00",
+    "symbol": "MAGH",
+    "issuerName": "Magnitude International Ltd Ordinary Shares",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2025-11-14",
+    "formatedHaltTime": "19:50:00",
+    "symbol": "MAMK",
+    "issuerName": "MaxsMaking Inc. Class A Ordinary Shares",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2025-11-11",
+    "formatedHaltTime": "19:50:00",
+    "symbol": "MCTA",
+    "issuerName": "Charming Medical Limited Class A Ordinary Shares",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2025-10-22",
+    "formatedHaltTime": "19:50:00",
+    "symbol": "LAWR",
+    "issuerName": "Robot Consulting Co., Ltd. ADS",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2025-10-16",
+    "formatedHaltTime": "19:50:00",
+    "symbol": "PC",
+    "issuerName": "Premium Catering (Holdings) Limited Ordinary Shares",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2025-10-03",
+    "formatedHaltTime": "19:50:00",
+    "symbol": "EFTY",
+    "issuerName": "Etoiles Capital Group Co., Ltd. Class A Ordinary Shares",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2025-10-01",
+    "formatedHaltTime": "11:28:10",
+    "symbol": "UCFIW",
+    "issuerName": "CN Healthy Food Tech Group Corp. Warrant",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2025-10-01",
+    "formatedHaltTime": "11:28:10",
+    "symbol": "UCFI",
+    "issuerName": "CN Healthy Food Tech Group Corp. Common Stock",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2025-09-12",
+    "formatedHaltTime": "12:24:23",
+    "symbol": "OST",
+    "issuerName": "Ostin Technology Group Co., Ltd. Class A Ordinary Shares",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   },
+   {
+    "formatedHaltDate": "2025-05-19",
+    "formatedHaltTime": "00:21:31",
+    "symbol": "SVA",
+    "issuerName": "Sinovac Biotech, Ltd",
+    "sourceExchange": "Nasdaq",
+    "reason": "News Pending",
+    "formatedResumptionDate": null,
+    "formatedResumptionTime": null
+   }
+  ],
+  "total": 15
+ }
+}
