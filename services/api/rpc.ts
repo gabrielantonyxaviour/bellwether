@@ -1,10 +1,11 @@
 /** Narrow Solana JSON-RPC gateway for the browser. Upstream credentials stay server-side. */
 import { z } from "zod"
+import { getCompiledTransactionMessageDecoder, getTransactionDecoder } from "@solana/kit"
 
 const ReadMethod = z.enum([
   "getAccountInfo", "getMultipleAccounts", "getProgramAccounts", "getBalance",
   "getTokenAccountBalance", "getLatestBlockhash", "getBlockHeight", "getSignatureStatuses",
-  "getTransaction", "simulateTransaction",
+  "getTransaction", "isBlockhashValid", "simulateTransaction",
 ])
 const Method = z.union([ReadMethod, z.literal("sendTransaction")])
 const Request = z.object({
@@ -19,10 +20,14 @@ const PUBLIC_DEVNET = "https://api.devnet.solana.com"
 
 type RpcRequest = z.infer<typeof Request>
 type RpcResponse = { status: number; body: unknown }
+type UpstreamResult = { rpc: { result?: unknown; error?: unknown }; url: string }
 export type RpcGateway = (body: string) => Promise<RpcResponse>
 
 function validParams(request: RpcRequest): boolean {
-  if (request.method === "getLatestBlockhash" || request.method === "getBlockHeight") return request.params.length <= 1
+  if (request.method === "getLatestBlockhash" || request.method === "getBlockHeight") {
+    return request.params.length === 0 || (request.params.length === 1 && request.params[0] !== null &&
+      typeof request.params[0] === "object" && !Array.isArray(request.params[0]))
+  }
   if (request.method === "getSignatureStatuses") {
     return Array.isArray(request.params[0]) && request.params[0].length <= 256 && request.params[0].every((item) => typeof item === "string")
   }
@@ -55,7 +60,8 @@ export function createRpcGateway(options: {
   const sleep = options.sleep ?? ((ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)))
   const random = options.random ?? Math.random
   const cache = new Map<string, { until: number; value: unknown }>()
-  const inFlight = new Map<string, Promise<unknown>>()
+  const inFlight = new Map<string, Promise<UpstreamResult>>()
+  const blockhashSources = new Map<string, { url: string; commitment: string; until: number }>()
 
   async function upstream(url: string, request: RpcRequest): Promise<unknown> {
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -76,15 +82,50 @@ export function createRpcGateway(options: {
     throw new Error("upstream rate limited")
   }
 
-  async function call(request: RpcRequest): Promise<unknown> {
+  async function call(request: RpcRequest): Promise<UpstreamResult> {
     for (const url of urls) {
       try {
-        const response = await upstream(url, request) as { error?: { message?: string } }
+        const response = await upstream(url, request) as UpstreamResult["rpc"]
         if (request.method === "getProgramAccounts" &&
-          /not available on the Free tier/i.test(response.error?.message ?? "")) continue
-        return response
+          /not available on the Free tier/i.test((response.error as { message?: string } | undefined)?.message ?? "")) continue
+        return { rpc: response, url }
       } catch { /* next configured upstream */ }
     }
+    throw new Error("all upstreams unavailable")
+  }
+
+  function signedBlockhash(wire: string): string | null {
+    try {
+      const tx = getTransactionDecoder().decode(Buffer.from(wire, "base64"))
+      return getCompiledTransactionMessageDecoder().decode(tx.messageBytes).lifetimeToken
+    } catch { return null }
+  }
+
+  const blockhashMissing = (rpc: UpstreamResult["rpc"]) =>
+    /Blockhash not found|BlockhashNotFound/i.test(JSON.stringify(rpc.error ?? ""))
+
+  async function send(request: RpcRequest): Promise<UpstreamResult> {
+    const hash = signedBlockhash(request.params[0] as string)
+    const source = hash ? blockhashSources.get(hash) : undefined
+    const pinned = source && source.until > now() ? source : undefined
+    const order = pinned ? [pinned.url, ...urls.filter((url) => url !== pinned.url)] : urls
+    const params = [...request.params]
+    if (pinned) params[1] = { ...(typeof params[1] === "object" && params[1] ? params[1] : {}),
+      preflightCommitment: pinned.commitment }
+    const transaction = { ...request, params }
+    let last: UpstreamResult | null = null
+    for (const [index, url] of order.entries()) {
+      try {
+        let rpc = await upstream(url, transaction) as UpstreamResult["rpc"]
+        if (index === 0 && blockhashMissing(rpc)) {
+          await sleep(1_000)
+          rpc = await upstream(url, transaction) as UpstreamResult["rpc"]
+        }
+        last = { rpc, url }
+        if (!blockhashMissing(rpc)) return last
+      } catch { /* retry on another configured upstream */ }
+    }
+    if (last) return last
     throw new Error("all upstreams unavailable")
   }
 
@@ -95,19 +136,27 @@ export function createRpcGateway(options: {
     const parsed = Request.safeParse(input)
     if (!parsed.success || !validParams(parsed.data)) return error(400, "invalid_rpc", "invalid JSON-RPC request")
     const request = parsed.data
-    const cacheable = ReadMethod.safeParse(request.method).success && request.method !== "simulateTransaction"
-    const cacheKey = cacheable ? JSON.stringify([request.method, request.params]) : ""
+    const coalescible = ReadMethod.safeParse(request.method).success && request.method !== "simulateTransaction"
+    const cacheable = coalescible && request.method !== "getLatestBlockhash" && request.method !== "isBlockhashValid"
+    const cacheKey = coalescible ? JSON.stringify([request.method, request.params]) : ""
     const cached = cacheable ? cache.get(cacheKey) : null
     if (cached && cached.until > now()) return { status: 200, body: { jsonrpc: "2.0", id: request.id, result: cached.value } }
     try {
       // The upstream id belongs to the first caller; the envelope below restores each caller's id.
-      let pending = cacheable ? inFlight.get(cacheKey) : undefined
+      let pending = coalescible ? inFlight.get(cacheKey) : undefined
       if (!pending) {
-        pending = call(request)
-        if (cacheable) inFlight.set(cacheKey, pending)
+        pending = request.method === "sendTransaction" ? send(request) : call(request)
+        if (coalescible) inFlight.set(cacheKey, pending)
       }
-      const result = await pending
-      const rpc = result as { result?: unknown; error?: unknown }
+      const { rpc, url } = await pending
+      if (request.method === "getLatestBlockhash" && !rpc.error) {
+        const hash = (rpc.result as { value?: { blockhash?: string } } | undefined)?.value?.blockhash
+        if (typeof hash === "string") {
+          if (blockhashSources.size >= 512) blockhashSources.clear()
+          const commitment = (request.params[0] as { commitment?: string } | undefined)?.commitment ?? "confirmed"
+          blockhashSources.set(hash, { url, commitment, until: now() + 120_000 })
+        }
+      }
       if (request.method === "sendTransaction" && !rpc.error) cache.clear()
       if (cacheable && !rpc.error) {
         if (cache.size >= 512) cache.clear()
@@ -119,6 +168,6 @@ export function createRpcGateway(options: {
       }
       return { status: 200, body: { jsonrpc: "2.0", id: request.id, ...(rpc.error ? { error: rpc.error } : { result: rpc.result }) } }
     } catch { return error(503, "rpc_unavailable", "devnet RPC is unavailable") }
-    finally { if (cacheable) inFlight.delete(cacheKey) }
+    finally { if (coalescible) inFlight.delete(cacheKey) }
   }
 }
