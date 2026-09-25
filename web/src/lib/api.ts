@@ -15,6 +15,7 @@ import {
   AdmitResponseSchema,
   ApiErrorBodySchema,
   CredentialStatusSchema,
+  CredentialHealthSchema,
   HaltsResponseSchema,
   NoticeDraftSchema,
   RehearsalReportSchema,
@@ -130,6 +131,7 @@ export const api = {
     request(credentialApi(), "/revoke", RevokeResponseSchema, { method: "POST", body: { wallet }, token }),
   credential: (wallet: string, signal?: AbortSignal) =>
     request(credentialApi(), `/credential/${encodeURIComponent(wallet)}`, CredentialStatusSchema, { signal }),
+  credentialHealth: (signal?: AbortSignal) => request(credentialApi(), "/health", CredentialHealthSchema, { signal }),
   screeningLog: (token: string, opts: { limit?: number; wallet?: string } = {}) =>
     request(credentialApi(), `/screening-log${qs({ limit: opts.limit?.toString(), wallet: opts.wallet })}`, ScreeningLogSchema, { token }),
 
@@ -143,6 +145,7 @@ export const queryKeys = {
   venue: () => ["venue"] as const,
   halts: (symbol?: string) => ["halts", symbol ?? null] as const,
   credential: (wallet: string | null) => ["credential", wallet] as const,
+  credentialHealth: () => ["credential", "health"] as const,
   noticeDraft: () => ["notice", "draft"] as const,
   rehearsal: () => ["rehearsal", "fwdi"] as const,
 }
@@ -161,6 +164,8 @@ export const useCredential = (wallet: string | null) =>
     enabled: !!wallet,
     refetchInterval: 60_000,
   })
+export const useCredentialHealth = (enabled: boolean) =>
+  useQuery({ queryKey: queryKeys.credentialHealth(), queryFn: ({ signal }) => api.credentialHealth(signal), enabled, staleTime: 60_000 })
 export const useNoticeDraft = () => useQuery({ queryKey: queryKeys.noticeDraft(), queryFn: ({ signal }) => api.noticeDraft(signal) })
 export const useRehearsalReport = () => useQuery({ queryKey: queryKeys.rehearsal(), queryFn: ({ signal }) => api.rehearsalReport(signal) })
 

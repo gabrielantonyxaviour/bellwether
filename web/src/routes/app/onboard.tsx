@@ -3,15 +3,15 @@ import { useQueryClient } from "@tanstack/react-query"
 import { Link } from "react-router"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { AddressDisplay } from "@/components/sol/address-display"
 import { OnboardingHeader } from "@/components/blocks/onboarding-1/components/onboarding-header"
 import { OnboardingStepper, type OnboardingStep } from "@/components/blocks/onboarding-1/components/onboarding-stepper"
 import { paths } from "@/app/paths"
-import { ApiError, queryKeys, useCredential } from "@/lib/api"
-import { clusterConfig, explorerUrl } from "@/lib/cluster"
+import { ApiError, queryKeys, useCredential, type AdmitResponse } from "@/lib/api"
+import { clusterConfig } from "@/lib/cluster"
 import { useWallet } from "@/lib/wallet"
 import { admitWithWallet } from "@/lib/wallet-ui/admission"
 import { WalletPicker } from "@/lib/wallet-ui/wallet-picker"
+import { AdmissionEvidence } from "./admission-evidence"
 
 const STEPS: OnboardingStep[] = [
   { id: "connect", value: 1, label: "Connect wallet" },
@@ -25,6 +25,7 @@ export function OnboardPage() {
   const qc = useQueryClient()
   const [phase, setPhase] = useState<"idle" | "signing" | "screening">("idle")
   const [error, setError] = useState<{ message: string; code?: string } | null>(null)
+  const [admitResult, setAdmitResult] = useState<AdmitResponse | null>(null)
   const admitted = credential.data?.status === "admitted"
   const rejected = error?.code === "SANCTIONED" || error?.code === "REVOKED" || credential.data?.status === "revoked"
   const retryable = error && !rejected
@@ -36,7 +37,8 @@ export function OnboardPage() {
     setError(null)
     setPhase("signing")
     try {
-      await admitWithWallet(wallet.walletName, wallet.publicKey, () => setPhase("screening"))
+      const result = await admitWithWallet(wallet.walletName, wallet.publicKey, () => setPhase("screening"))
+      setAdmitResult(result)
       await qc.invalidateQueries({ queryKey: queryKeys.credential(wallet.publicKey) })
     } catch (cause) {
       setError({ message: cause instanceof Error ? cause.message : "Admission failed", code: cause instanceof ApiError ? cause.code : undefined })
@@ -54,11 +56,7 @@ export function OnboardPage() {
           <WalletPicker />
           {wallet.publicKey && credential.isPending && <p role="status" className="text-sm text-muted-foreground">Checking your onchain admission…</p>}
           {wallet.publicKey && credential.isError && <div role="alert" className="rounded-lg border p-3 text-sm">Admission status unavailable: {credential.error.message}<Button variant="outline" size="sm" className="ml-2" onClick={() => void credential.refetch()}>Retry</Button></div>}
-          {admitted && credential.data && <div className="space-y-3 rounded-lg border p-4"><Badge variant="secondary">Admitted · test credential</Badge><h3 className="font-semibold">Your credential is onchain</h3>
-            <dl className="space-y-2 text-sm"><div className="flex justify-between gap-3"><dt className="text-muted-foreground">Valid until</dt><dd>{credential.data.expiresAt ? new Date(credential.data.expiresAt).toLocaleString() : "Unknown"}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Credential</dt><dd><AddressDisplay address={credential.data.credential.address} href={explorerUrl("account", credential.data.credential.address)} /></dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Stock account</dt><dd>{credential.data.stockAccount.state}</dd></div></dl>
-            <Button nativeButton={false} render={<Link to={paths.trade(clusterConfig().defaultSymbol)} />}>Start trading →</Button></div>}
+          {admitted && credential.data && <div className="space-y-4"><div className="space-y-3 rounded-lg border p-4"><Badge variant="secondary">Admitted · test credential</Badge><h3 className="font-semibold">Your credential is onchain</h3><Button nativeButton={false} render={<Link to={paths.trade(clusterConfig().defaultSymbol)} />}>Start trading →</Button></div><AdmissionEvidence status={credential.data} result={admitResult} /></div>}
           {rejected && <div className="rounded-lg border border-destructive p-4 text-sm" role="alert"><strong>Admission refused</strong><p className="mt-1">{error?.code === "SANCTIONED" ? "This address matched the OFAC SDN list. No credential was issued." : error?.message ?? "This credential was revoked. Contact the venue operator."}</p></div>}
           {retryable && <div role="alert" className="rounded-lg border p-4 text-sm"><strong>{error.code === "SCREENING_UNAVAILABLE" ? "Screening unavailable" : "Admission did not finish"}</strong><p className="mt-1 text-muted-foreground">{error.message}</p><Button variant="outline" className="mt-3" onClick={() => void admit()}>Retry admission</Button></div>}
           {wallet.publicKey && !admitted && !rejected && !credential.isPending && !credential.isError && !retryable && <Button disabled={busy} onClick={() => void admit()}>{phase === "signing" ? "Awaiting wallet signature…" : phase === "screening" ? "Screening address and issuing credential…" : "Sign challenge and get admitted"}</Button>}

@@ -85,7 +85,7 @@ async function connect(page: import("@playwright/test").Page, wallet: Awaited<Re
   return page.getByRole("region", { name: "Venue status" })
 }
 async function proxyCredential(page: import("@playwright/test").Page, unavailable: () => boolean = () => false) {
-  await page.route("**/credential/*", async (route) => {
+  await page.route(/\/(credential\/[^/]+|health)$/, async (route) => {
     if (unavailable()) return route.abort()
     try {
       const response = await fetch(route.request().url(), { signal: AbortSignal.timeout(10_000) })
@@ -164,6 +164,15 @@ test("fresh devnet wallet admits, buys, deposits and withdraws through the UI", 
   await page.getByRole("button", { name: "Bellwether devnet signer" }).click()
   if (before.status !== "admitted") await page.getByRole("button", { name: "Sign challenge and get admitted" }).click()
   await expect(page.getByText("Your credential is onchain")).toBeVisible({ timeout: 120_000 })
+  const health = await (await fetch(`${API}/health`)).json() as { sdn: { publishDate: string; officialAddresses: number; fetchedAt: string }; credential: { program: string; credential: string; schema: string } }
+  const evidence = page.getByRole("region", { name: "How you were admitted" })
+  await expect(evidence.getByText("Screened against the OFAC SDN list")).toBeVisible()
+  await expect(evidence.getByText(health.sdn.publishDate)).toBeVisible()
+  await expect(evidence.getByText(health.sdn.officialAddresses.toLocaleString())).toBeVisible()
+  await expect(evidence.getByRole("link", { name: "OFAC SDN.XML ↗" })).toHaveAttribute("href", /sanctionslistservice\.ofac\.treas\.gov/)
+  await expect(evidence.getByText("Your attestation")).toBeVisible()
+  await expect(evidence.getByText("thawed", { exact: true })).toBeVisible()
+  await expect(evidence.locator('a[href*="solscan.io/account/"]')).toHaveCount(5)
   await page.getByRole("link", { name: "Trade", exact: true }).click()
   await expect(page.getByRole("region", { name: "Venue status" }).getByText("admitted", { exact: true })).toBeVisible({ timeout: 30_000 })
   await page.getByRole("textbox", { name: "You pay · USDC" }).fill("0.05")
@@ -173,6 +182,7 @@ test("fresh devnet wallet admits, buys, deposits and withdraws through the UI", 
   catch { throw new Error(`Signed swap broadcasts: ${broadcasts}\nRPC: ${rpcEvents.join("; ")}\nTrade screen: ${await page.locator("main").innerText()}`) }
   expect(broadcasts, "browser wallet must submit a signed swap through the RPC gateway").toBeGreaterThan(0)
   const swapUrl = await page.getByRole("link", { name: "View transaction ↗" }).getAttribute("href")
+  expect(new URL(swapUrl!).searchParams.get("cluster")).toBe("devnet")
   const swapSignature = swapUrl ? new URL(swapUrl).pathname.split("/").at(-1) : null
   expect(swapSignature).toBeTruthy()
   await expect.poll(async () => {
@@ -186,19 +196,41 @@ test("fresh devnet wallet admits, buys, deposits and withdraws through the UI", 
   await page.getByRole("button", { name: "Confirm deposit" }).click()
   try { await expect(page.getByText("Liquidity deposit confirmed on chain.")).toBeVisible({ timeout: 90_000 }) }
   catch { throw new Error(`Deposit screen: ${await page.locator("main").innerText()}`) }
+  expect(new URL((await page.getByRole("link", { name: "View transaction ↗" }).getAttribute("href"))!).searchParams.get("cluster")).toBe("devnet")
   await page.getByRole("tab", { name: "Withdraw" }).click()
   await page.getByRole("button", { name: "MAX" }).click()
   await page.getByRole("button", { name: "Review withdrawal" }).click()
   await page.getByRole("button", { name: "Confirm withdraw" }).click()
   try { await expect(page.getByText("Liquidity withdraw confirmed on chain.")).toBeVisible({ timeout: 90_000 }) }
   catch { throw new Error(`Withdrawal screen: ${await page.locator("main").innerText()}`) }
+  expect(new URL((await page.getByRole("link", { name: "View transaction ↗" }).getAttribute("href"))!).searchParams.get("cluster")).toBe("devnet")
 })
 
 test("connected admitted devnet wallet resolves its credential", async ({ page }) => {
   await proxyCredential(page)
-  const status = await connect(page, await admittedWallet())
+  const wallet = await admittedWallet()
+  const status = await connect(page, wallet)
   await expect(status.getByText("admitted", { exact: true })).toBeVisible({ timeout: 30_000 })
   await expect(status.getByText("Checking…")).toHaveCount(0)
+  const live = await (await fetch(`${API}/credential/${wallet.address}`)).json() as { admissionSignature: string }
+  expect(live.admissionSignature).toBeTruthy()
+  await page.goto(`${WEB}/app/onboard`)
+  const evidence = page.getByRole("region", { name: "How you were admitted" })
+  await expect(evidence).toBeVisible({ timeout: 30_000 })
+  await expect(evidence.locator(`a[href="https://solscan.io/tx/${live.admissionSignature}?cluster=devnet"]`)).toBeVisible()
+  await expect(evidence.getByText("Issuer has no transaction reference")).toHaveCount(0)
+})
+
+test("admission evidence reports a list health failure and recovers", async ({ page }) => {
+  await proxyCredential(page)
+  await connect(page, await admittedWallet())
+  await page.route("**/health", (route) => route.abort())
+  await page.goto(`${WEB}/app/onboard`)
+  const evidence = page.getByRole("region", { name: "How you were admitted" })
+  await expect(evidence.getByText("List record unavailable:", { exact: false })).toBeVisible({ timeout: 30_000 })
+  await page.unroute("**/health")
+  await evidence.getByRole("button", { name: "Retry" }).click()
+  await expect(evidence.getByRole("link", { name: "OFAC SDN.XML ↗" })).toBeVisible({ timeout: 30_000 })
 })
 
 test("connected fresh devnet wallet resolves as not admitted", async ({ page }) => {

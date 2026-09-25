@@ -179,8 +179,29 @@ export const CredentialStatusSchema = z.looseObject({
   credential: CredentialRefSchema,
   stockAccount: StockAccountSchema,
   lastScreening: z.looseObject({ at: iso, event: z.string(), result: z.string().optional() }).nullable(),
+  admissionSignature: z.string().nullable(),
 })
 export type CredentialStatus = z.infer<typeof CredentialStatusSchema>
+
+export const CredentialHealthSchema = z.looseObject({
+  ok: z.literal(true),
+  cluster: z.string(),
+  gate: z.enum(["sas", "membership"]),
+  credential: z.looseObject({
+    program: address.optional(),
+    credential: address.optional(),
+    schema: address.optional(),
+  }),
+  sdn: z.looseObject({
+    source: z.url(),
+    publishDate: z.string().nullable(),
+    fetchedAt: iso,
+    stale: z.boolean(),
+    officialAddresses: z.number().int().nonnegative(),
+    fixtureAddresses: z.number().int().nonnegative(),
+  }).nullable(),
+})
+export type CredentialHealth = z.infer<typeof CredentialHealthSchema>
 
 export const ScreeningLogSchema = z.looseObject({
   label: z.string(),
