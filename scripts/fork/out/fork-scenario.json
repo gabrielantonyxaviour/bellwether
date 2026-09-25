@@ -1,0 +1,33 @@
+{
+  "cluster": "fork",
+  "rpcUrl": "http://127.0.0.1:8960",
+  "programId": "GWT4Eedy6nyHHUtAJgpps5A68WYRqdUiSXUSDomMw87w",
+  "venue": "5vNpjynVwwQBSEqutEoncMhNaDcuyFj2AWvsmW52ouh6",
+  "fwdiMint": "7GzQgf6DPo6ZANjnbhe9tNCpkGTv3zqHbsDx74jyQf9",
+  "transferAgentApproval": "fork-only surfnet_setTokenAccount",
+  "signatures": {
+    "deploy": "2DrnJXgkas7ZbfLBqGNNtMTT2vpbhjb7wBZiVuRJqZW2ADFXajxag26vASAyd7UDGoEUES2DsN46NKNQ3sGvUHsL",
+    "initVenue": "5RntoBFChYX1PH2HYxYLHYdfT8S7d9YwPTqXEPizXsKBVi85aknDYRpj1ry5ymzFwkr4SRhFvTNg3kPvziEjHann",
+    "registerFwdi": "6WcEDj45GhT2EjpkCBPdsH4mkyJYVFfWc3LuTEhDnpbLuyiYFq5sTkfu7Df5pgyB8JEs4jQz613B72PXeXPTUHr",
+    "registerThirdParty": "4aCGFjGv3zektxxg3vsLkqAxgugBs5XVt5TkuzSq9T1Ac75H5FEZo12LLNEpUpdVnkf5xmLQ5rWiyHJTQEyKsVFx",
+    "createVaults": "2mTrCb5xAbnqc4b43Zy3628fPTvsf6Gm3H6aWENkSw2w9SVFQWsNMoRaUD6smfavJc2fWAggszVtuZVyzC5mTMfD",
+    "initPool": "3SiCgbooquoZPE9hj2KiWK9c38aYF11nPBbQ7xYjUVrttrD3dzyo8CPk7hyyQPqGMF7fuKZt1ZFc5S5GmodVhxZK",
+    "createAccounts": "5UyQrFkKHn7F9rkQQ6e64BHzgqz9qeDycz6fYMx9wmsZwxeNy9G72zbNvWg8fZLeZyjNwnJzZmVS2bWhj74J9fXq",
+    "admit": "ZDrDYNKqT2WEwe3FkVQYZBG9t1BTFBMyrVuHJQEjyU9KK1jvddzt3Za5f2QUSdBwM7PwhozhbNbrFDiFsaTpSVL",
+    "rulebook": "5gxAqin23vV8P4MoZ8TMNUvSyuH4FVWHwLSnSJns31PbfoGw5XU2hZvY588CUsmmtNSkocADKBbvUjaopTQZaDkM",
+    "seedLiquidity": "581DqZkydH6WsR22L9Mq5Wi7A2LS8Yo5mJ2bGaPjMU9uP1uj5a6j2HEtBDRapsg6bNat2yinPbsEeTamjn72AEb6",
+    "fwdiSwap": "4k2yhpN8ALNaYHuRqDKiUtP2d1c49qJCydLNXCH86BgNd53wmeyubKdY2H3fe1heqTyFWDc9hA5c1N2gAqpvc1we",
+    "issuerNotice": "4UwMVHPimacAsdki6XVCwGHPYfarj7bqq3zKdrdB6YzZ8TyvfR8Qm4Fgv29MbWp9RvEKG5h3FcS6Q5Eszrq37NUY",
+    "thirdPartyActivated": "431Ra14f1EhoMEPf9puEfkt1rQtzaAgTCdg5hYe8hSzstnHboaAhCTFKabd25hjdhJfwQL3qfQB6uJuzP1vnmUG6",
+    "firstBreach": "29enyXNEvNotwKSygJyqyuWWTFSyYbHZyNWmybmRVvSZPv9Sy4HeJEsGDPBq42ib9ggwW6U93FBfjsf4DdbRhTVA",
+    "secondBreach": "4niJ2BseYRKLeE9wcru8QGJpshXdQzmqtZjgr2XMjj2J6rJ81aYF5f1gt9RtF6rWCwwr3F7xULy4hTw1TvfMGBXx",
+    "heartbeatAfterBreach": "4ZQu8QYPWXJrxggJe4sV11t7KQQLt2K7K8SsKjuJdoyfbiCE7fAVjseWMDBqvyxKYkm26LpL4zywmeC8sajU3wH",
+    "heartbeatAfterPause": "31Ps42LJdUas6sno9DubLinm6M9im5ayHJRvF8kmGntGMDwBEijbCTpDBMsC2LqkbJrh4RiGSMr8MSiUX6Yt8hGV",
+    "fwdiSwapAfterPause": "2XcBNUwGdb1tdeCWsurWwQFMuHzfFNs8NVpR5uJz7DtrqMEdswkJdPjBuBTY45RUnHo1rm5Ga4s1PpRw8cTrQwQF"
+  },
+  "observed": {
+    "noticeWindowOpen": 6008,
+    "paused": 6004
+  },
+  "checkedAt": "2026-09-25T13:35:48.710Z"
+}
