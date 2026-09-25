@@ -11,7 +11,7 @@ import { DEFAULT_LEAD_SECONDS, volumeSymbolFor } from "./config.js"
 import { writeProvenance, type ProvenanceRun, type SymbolProvenance } from "./provenance.js"
 import { targetTradeDate } from "./units.js"
 import { priorMonth } from "../rehearsal/constants.js"
-import { listSymbols, readMintUnits, readVenue, setCapIx, type SymbolRecord } from "./venue.js"
+import { listSymbols, readMintUnits, readSymbolRecord, readVenue, setCapIx, type SymbolRecord } from "./venue.js"
 import type { MonthVolume } from "./volume.js"
 
 export interface CapsJobOptions {
@@ -25,6 +25,8 @@ export interface CapsJobOptions {
   fetchImpl?: typeof fetch
   /** Restrict the run to these on-chain tickers. */
   tickers?: string[]
+  /** Known on-chain symbol accounts, useful on a private fork whose datasource cannot scan programs. */
+  symbolAccounts?: Address[]
   provenanceDir?: string | null
   leadSeconds?: number
   rpcHost?: string
@@ -59,7 +61,12 @@ export async function runCapsJob(o: CapsJobOptions): Promise<ProvenanceRun> {
   const now = o.now ?? new Date()
   const leadSeconds = o.leadSeconds ?? DEFAULT_LEAD_SECONDS
   const tradeDate = targetTradeDate(now, venueCfg.cutoffSeconds, leadSeconds)
-  const registered = await listSymbols(o.rpc, o.programId, o.venue)
+  const registered = o.symbolAccounts
+    ? await Promise.all(o.symbolAccounts.map((account) => readSymbolRecord(o.rpc, account, o.programId)))
+    : await listSymbols(o.rpc, o.programId, o.venue)
+  for (const record of registered) {
+    if (record.venue !== o.venue) throw new Error(`symbol ${record.address} belongs to another venue`)
+  }
   const wanted = o.tickers?.map((t) => t.toUpperCase())
   const records = wanted ? registered.filter((r) => wanted.includes(r.ticker.toUpperCase())) : registered
   const lists = await loadTierLists(o.fetchImpl)

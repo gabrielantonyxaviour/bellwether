@@ -169,6 +169,15 @@ async function onFork() {
     const again = await runCapsJob({ ...base, dataAuthority, fetchImpl: fixtureFetch(fixture) })
     expect(again.symbols.filter((s) => s.ticker !== "ZZTEST").every((s) => s.onchain.action === "unchanged" && s.onchain.signature === null), "re-run with the same data → unchanged, no transaction", again.symbols.map((s) => s.onchain))
 
+    const rpcWithoutScan = new Proxy(chain.rpc, { get(target, key, receiver) {
+      if (key === "getProgramAccounts") return () => { throw new Error("program scan unavailable") }
+      return Reflect.get(target, key, receiver)
+    } })
+    const known = await runCapsJob({ ...base, rpc: rpcWithoutScan, symbolAccounts: [symbols.BWRS],
+      dataAuthority, fetchImpl: fixtureFetch(fixture) })
+    expect(known.symbols.length === 1 && known.symbols[0]?.ticker === "BWRS" && known.symbols[0].onchain.action === "unchanged",
+      "known fork symbol works without a program scan", known.symbols.map((s) => [s.ticker, s.onchain.action]))
+
     const partial = await runCapsJob({ ...base, dataAuthority, fetchImpl: fixtureFetch(fixture, { missing: ["yahoo"] }) })
     const pb = partial.symbols.find((s) => s.ticker === "BWRS")
     expect(pb?.status === "partial" && show(pb?.missing) === show(["yahoo"]) && pb?.cap === null, "Yahoo missing on the fork → BWRS 'partial', no cap number", pb && { status: pb.status, missing: pb.missing, cap: pb.cap })

@@ -35,6 +35,7 @@ const envSchema = z.object({
   CAPS_VENUE_ADMIN: optional(base58),
   CAPS_DATA_AUTHORITY_KEYPAIR: optional(z.string()),
   CAPS_SYMBOLS: optional(z.string().regex(/^[A-Za-z0-9.]{1,8}(,[A-Za-z0-9.]{1,8})*$/)),
+  CAPS_SYMBOL_ACCOUNTS: optional(z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}(,[1-9A-HJ-NP-Za-km-z]{32,44})*$/)),
   CAPS_PROVENANCE_DIR: optional(z.string()),
   CAPS_LEAD_MINUTES: optional(z.coerce.number().int().min(0).max(1440)),
   CAPS_NOW: optional(z.string().datetime()),
@@ -63,6 +64,7 @@ async function main() {
     rpc, send, programId, venue, dataAuthority, provenanceDir, rpcHost: rpcUrl.host,
     now: env.CAPS_NOW ? new Date(env.CAPS_NOW) : undefined,
     tickers: env.CAPS_SYMBOLS?.split(","),
+    symbolAccounts: env.CAPS_SYMBOL_ACCOUNTS?.split(",").map(address),
     leadSeconds: env.CAPS_LEAD_MINUTES === undefined ? undefined : env.CAPS_LEAD_MINUTES * 60,
   })
   process.stdout.write(`caps ${run.tradeDate} (volume ${run.month}) venue ${run.venue}${dryRun ? " [dry run]" : ""}\n`)

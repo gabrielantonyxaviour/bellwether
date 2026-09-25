@@ -51,6 +51,7 @@ export function writeRuntime(d: Deployment): void {
     CAPS_VENUE: d.venue,
     CAPS_DATA_AUTHORITY_KEYPAIR: resolve(ensureKey(d.cluster, "data-authority")),
     CAPS_SYMBOLS: "BWRS",
+    ...(d.cluster === "fork" && d.symbol ? { CAPS_SYMBOL_ACCOUNTS: d.symbol } : {}),
     CREDENTIAL_CLUSTER: d.cluster,
     CREDENTIAL_RPC_URL: d.rpcUrl,
     CREDENTIAL_ISSUER_KEYPAIR: resolve(ensureKey(d.cluster, "credential-issuer")),
