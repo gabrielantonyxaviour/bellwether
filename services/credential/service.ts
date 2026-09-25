@@ -6,7 +6,6 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import type { AddressInfo } from "node:net"
 import { serve } from "@hono/node-server"
-import { createChain } from "../../scripts/assets/tx.js"
 import { createAdmissions, type Admissions } from "./admission.js"
 import { createApp } from "./app.js"
 import { createDevnetFunder } from "./funding.js"
@@ -14,14 +13,14 @@ import type { CredentialBackend } from "./backend.js"
 import type { CredentialConfig } from "./config.js"
 import { LABEL } from "./labels.js"
 import { membershipBackend } from "./membership.js"
-import { resilientChain } from "./retry.js"
+import { createCredentialChain } from "./retry.js"
 import { sasBackend, sasIdentity } from "./sas.js"
 import { ScreeningLog } from "./screening-log.js"
 import { createScreening } from "./screening.js"
 import { loadFixture } from "./sdn.js"
 
 export async function createService(config: CredentialConfig): Promise<Admissions> {
-  const chain = resilientChain(createChain(config.rpcUrl))
+  const chain = createCredentialChain(config.rpcUrl)
   let backend: CredentialBackend
   if (config.gate.kind === "sas") {
     const identity = await sasIdentity(config.issuer.address)

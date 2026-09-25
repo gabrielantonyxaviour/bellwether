@@ -6,10 +6,12 @@
 import assert from "node:assert/strict"
 import { generateKeyPairSync, sign } from "node:crypto"
 import { mkdtempSync, readFileSync, existsSync } from "node:fs"
+import { createServer } from "node:http"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { test } from "node:test"
-import { address, generateKeyPairSigner, getAddressEncoder, getBase58Decoder, type Address } from "@solana/kit"
+import { address, generateKeyPairSigner, getAddressEncoder, getBase58Decoder, type Address, type Base64EncodedWireTransaction } from "@solana/kit"
+import { createChain } from "../../scripts/assets/tx.js"
 import { createApp } from "./app.js"
 import { createChallenges } from "./challenge.js"
 import { AdmissionError, type Admissions } from "./admission.js"
@@ -18,7 +20,7 @@ import { Screener, loadFixture, loadOfficialList, parseSdnXml } from "./sdn.js"
 import { ScreeningLog } from "./screening-log.js"
 import { initVenueIx, swapIx, GATE_SAS } from "./venue-ix.js"
 import { LABEL } from "./labels.js"
-import { isTransient, withRetry } from "./retry.js"
+import { createCredentialChain, isTransient, withRetry } from "./retry.js"
 
 const SOL_SDN = "42RLPACwZPx3vYYmxSueqsogfynBDqXK298EDsNoyoHi"
 const XML = `<?xml version="1.0" standalone="yes"?>
@@ -272,7 +274,7 @@ test("venue instructions: byte layouts match docs/program-contract.md", async ()
 
 test("retries: only transient, pre-execution RPC failures are retried", async () => {
   assert.equal(isTransient(new Error('Internal error: "Failed to fetch accounts from remote: error sending request"')), true)
-  assert.equal(isTransient(new TypeError("Cannot destructure property 'err' of 'data' as it is undefined.")), true)
+  assert.equal(isTransient(new TypeError("Cannot destructure property 'err' of 'data' as it is undefined.")), false)
   assert.equal(isTransient(new Error("HTTP error (429): Too Many Requests")), true)
   assert.equal(isTransient(new Error('transaction abc failed: {"InstructionError":[0,{"Custom":6000}]}')), false)
   assert.equal(isTransient(new Error("transaction abc not confirmed within 90s")), false)
@@ -283,4 +285,30 @@ test("retries: only transient, pre-execution RPC failures are retried", async ()
   calls = 0
   await assert.rejects(withRetry(async () => { calls++; throw new Error("custom program error: 0x1770") }, 5, 1))
   assert.equal(calls, 1)
+})
+
+test("credential RPC preserves a raw -32002 preflight message with no data", async () => {
+  const response = { jsonrpc: "2.0", id: "1", error: { code: -32002, message: "Failed to fetch accounts from remote: error sending request" } }
+  const server = createServer(async (req, res) => {
+    const chunks: Buffer[] = []
+    for await (const chunk of req) chunks.push(Buffer.from(chunk))
+    const request = JSON.parse(Buffer.concat(chunks).toString("utf8"))
+    assert.equal(request.method, "sendTransaction")
+    res.setHeader("content-type", "application/json")
+    res.end(JSON.stringify({ ...response, id: request.id }))
+  })
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
+  try {
+    const port = (server.address() as { port: number }).port
+    const url = `http://127.0.0.1:${port}`
+    await assert.rejects(createChain(url).rpc.sendTransaction("AA==" as Base64EncodedWireTransaction, { encoding: "base64" }).send(),
+      /Cannot destructure property 'err' of 'data'/)
+    const chain = createCredentialChain(url)
+    await assert.rejects(chain.rpc.sendTransaction("AA==" as Base64EncodedWireTransaction, { encoding: "base64" }).send(),
+      /RPC preflight rejected without simulation data: Failed to fetch accounts from remote: error sending request/)
+    assert.equal(isTransient(new Error(response.error.message)), true)
+    assert.equal(isTransient(new Error("RPC preflight rejected without simulation data: insufficient funds")), false)
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()))
+  }
 })

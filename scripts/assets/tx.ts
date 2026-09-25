@@ -49,8 +49,7 @@ export function errorText(error: unknown): string {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-export function createChain(rpcUrl: string): Chain {
-  const rpc = createSolanaRpc(rpcUrl)
+export function createChain(rpcUrl: string, rpc: Rpc = createSolanaRpc(rpcUrl)): Chain {
 
   async function send(instructions: Instruction[], feePayer: TransactionSigner): Promise<Signature> {
     const { value: blockhash } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send()
