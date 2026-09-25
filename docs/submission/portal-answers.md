@@ -48,7 +48,7 @@ Only Step 1's fields have been observed. Map these values to the actual fields b
 | --- | --- |
 | Track | Stocklana **main track only**. No sponsor tracks. Confirm portal selector. |
 | Tech stack | Rust + Pinocchio venue program; Token-2022 and Solana Attestation Service; TypeScript relay, caps job, credential issuer, indexer and API; React + Vite web app; Surfpool mainnet fork. The web is deployed on Cloudflare Pages; signing services run on a Mac through a named Cloudflare tunnel. |
-| GitHub | <https://github.com/gabrielantonyxaviour/bellwether> — approved target; verify public access and secrets audit before adding. |
+| GitHub | <https://github.com/gabrielantonyxaviour/bellwether> — public, with `main` at filtered commit `54d0c4a`; README renders. Film media is excluded from its history. |
 | Live app | <https://bellwether.larinova.com> — public, participant and operator routes on devnet. API and admission: <https://bellwether-api.larinova.com>. [Dated explorer](https://bellwether.larinova.com/explorer?date=2026-09-25) and [API tape](https://bellwether-api.larinova.com/tape?date=2026-09-25) show finalized swaps. |
 | Demo video | **[ADD PUBLIC VIDEO URL AFTER UPLOAD]**; ≤3:00, Gabriel's voice. |
 | Team | Gabriel Antony Xaviour; confirm account name and any invited teammates in the portal. |
